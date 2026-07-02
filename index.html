@@ -96,7 +96,7 @@
     <div class="brand"><div class="logo">G</div><div><h1>Glossmith <span>Sales</span></h1></div></div>
     <div style="text-align:right;">
       <button class="role-chip" id="roleChip" onclick="logout()">Staff · Lock</button>
-      <div style="font-size:9px;color:#3a3a3a;margin-top:4px;">build: <span id="buildTagApp"></span></div>
+      <div style="font-size:9px;color:#3a3a3a;margin-top:4px;cursor:pointer;" onclick="openConnect()">build: <span id="buildTagApp"></span> · connect</div>
     </div>
   </div>
   <div class="tabs" id="tabs"></div>
@@ -112,8 +112,14 @@
 <div class="toast" id="toast"></div>
 <script>
 /* ================= CONFIG ================= */
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmMMTy7QJ9-1yOGgS_Ag-7lX4shk1HOXNxs6p4xoJMfQqmSLY5mvb0UbRkhw9ldeFW/exec";
-const EXPECTED_SCRIPT_VERSION = "v5-2026-07-02-commission";
+/* The DEFAULT backend URL. The app can override this at runtime via the
+   built-in "Connect backend" screen (stored on this device), so a wrong or
+   outdated URL here is no longer fatal — paste the right one in the app. */
+const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmMMTy7QJ9-1yOGgS_Ag-7lX4shk1HOXNxs6p4xoJMfQqmSLY5mvb0UbRkhw9ldeFW/exec";
+function getWebAppUrl(){try{return localStorage.getItem("gs_webapp_url")||DEFAULT_WEB_APP_URL;}catch(e){return DEFAULT_WEB_APP_URL;}}
+function setWebAppUrl(u){try{if(u)localStorage.setItem("gs_webapp_url",u);else localStorage.removeItem("gs_webapp_url");}catch(e){}}
+let WEB_APP_URL = getWebAppUrl();
+const EXPECTED_SCRIPT_VERSION = "v6-2026-07-02-final";
 const DISCOUNT_RATE=0.08, COMMISSION_RATE=0.10;
 const CHANNELS=["WhatsApp","Website","Walk-in"];
 const CATEGORIES=["Car Club","Influencer","Staff Referral","Other"];
@@ -338,10 +344,41 @@ function memberForPlate(plate){const p=normalizePlate(plate);return STATE.member
 
 function checkServerVersion(){
   const b=document.getElementById("versionBanner");if(!b)return;
-  if(!STATE.serverVersion){b.style.display="block";b.innerHTML="⚠️ This app is talking to an <b>old backend</b> that doesn't report its version. To fix permanently: open your Sheet → <b>Extensions → Apps Script</b>, paste the latest Code.gs, then <b>Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy</b>. The live URL stays the same. Until then, closing works but new features (Clear balance) may fail.";return;}
-  if(STATE.serverVersion!==EXPECTED_SCRIPT_VERSION){b.style.display="block";b.innerHTML="⚠️ Backend is version \""+esc(STATE.serverVersion)+"\" but this app expects \""+esc(EXPECTED_SCRIPT_VERSION)+"\". In Apps Script (via Sheet → Extensions → Apps Script): paste the latest Code.gs, then Deploy → Manage deployments → edit → New version → Deploy.";return;}
+  const fixBtn=`<button onclick="openConnect()" style="display:block;margin-top:10px;background:#fff;color:#a03a30;border:none;border-radius:8px;padding:10px 14px;font-weight:700;font-size:13px;cursor:pointer;width:100%;">🔌 Fix connection — paste your new backend URL</button>`;
+  if(!STATE.serverVersion){b.style.display="block";b.innerHTML="⚠️ The app is talking to an <b>old backend</b>. Easiest permanent fix: in Apps Script do <b>Deploy → New deployment</b> (Web app, Execute as Me, Anyone), copy the NEW URL, then tap the button below and paste it."+fixBtn;return;}
+  if(STATE.serverVersion!==EXPECTED_SCRIPT_VERSION){b.style.display="block";b.innerHTML="⚠️ Backend is version \""+esc(STATE.serverVersion)+"\" but this app expects \""+esc(EXPECTED_SCRIPT_VERSION)+"\". Paste the latest Code.gs in Apps Script, do <b>Deploy → New deployment</b>, copy the NEW URL, then tap below."+fixBtn;return;}
   b.style.display="none";
 }
+/* ---- Connect backend: paste an /exec URL, test it live, save on this device ---- */
+function openConnect(){
+  let m=document.getElementById("connectModal");
+  if(!m){m=document.createElement("div");m.id="connectModal";m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;";document.body.appendChild(m);}
+  m.innerHTML=`<div style="background:var(--black);border:1px solid var(--border);border-radius:14px;padding:18px;max-width:520px;width:100%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-family:'Space Grotesk';font-weight:700;font-size:15px;">Connect backend</div><button onclick="document.getElementById('connectModal').remove()" style="background:none;border:none;color:#9a9a9a;font-size:22px;cursor:pointer;">×</button></div>
+    <div style="font-size:12px;color:#9a9a9a;margin:8px 0 12px;line-height:1.5;">In Apps Script: <b>Deploy → New deployment → Web app → Execute as: Me → Anyone → Deploy</b>. Copy the URL it gives you (ends in <b>/exec</b>) and paste it here. The app will test it before saving.</div>
+    <label>Web App URL<input id="cn_url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(WEB_APP_URL)}"></label>
+    <button class="btn" style="width:100%;" onclick="testAndSaveUrl()">Test & save</button>
+    <button class="btn-outline" style="width:100%;margin-top:8px;" onclick="resetUrl()">Reset to built-in URL</button>
+    <div id="cn_note" style="font-size:12px;color:#7a7a7a;margin-top:10px;min-height:16px;"></div>
+  </div>`;
+}
+async function testAndSaveUrl(){
+  const url=document.getElementById("cn_url").value.trim();
+  const note=document.getElementById("cn_note");
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)){note.textContent="That doesn't look like an Apps Script /exec URL.";note.style.color="var(--danger)";return;}
+  note.textContent="Testing connection…";note.style.color="#7a7a7a";
+  try{
+    const r=await fetch(url);const d=await r.json();
+    if(!d||typeof d!=="object"){note.textContent="URL responded but not with app data.";note.style.color="var(--danger)";return;}
+    if(!d.version){note.textContent="Connected, but that backend is an OLD Code.gs (no version). Paste the latest Code.gs into that script and deploy again.";note.style.color="var(--danger)";return;}
+    if(d.version!==EXPECTED_SCRIPT_VERSION){note.textContent="Connected, but backend is \""+d.version+"\" (app expects \""+EXPECTED_SCRIPT_VERSION+"\"). Paste the latest Code.gs there, Deploy → New deployment, and use that URL.";note.style.color="var(--danger)";return;}
+    setWebAppUrl(url);WEB_APP_URL=url;
+    note.textContent="✅ Connected to the current backend ("+d.version+"). Saved — reloading…";note.style.color="var(--lime)";
+    await loadData();renderAll();
+    setTimeout(()=>{const mm=document.getElementById("connectModal");if(mm)mm.remove();showToast("Backend connected — all systems current");},900);
+  }catch(e){note.textContent="Could not reach that URL: "+(e.message||e);note.style.color="var(--danger)";}
+}
+async function resetUrl(){setWebAppUrl("");WEB_APP_URL=DEFAULT_WEB_APP_URL;const note=document.getElementById("cn_note");note.textContent="Reset to built-in URL.";note.style.color="#7a7a7a";await loadData();renderAll();}
 
 /* ================= GATE / KEYPAD ================= */
 function buildKeypad(){
