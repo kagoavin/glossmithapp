@@ -106,13 +106,14 @@
   <div id="panel-vehicles" class="panel"></div>
   <div id="panel-promos" class="panel"></div>
   <div id="panel-members" class="panel"></div>
+  <div id="panel-commission" class="panel"></div>
   <div id="panel-reports" class="panel"></div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
 /* ================= CONFIG ================= */
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmMMTy7QJ9-1yOGgS_Ag-7lX4shk1HOXNxs6p4xoJMfQqmSLY5mvb0UbRkhw9ldeFW/exec";
-const EXPECTED_SCRIPT_VERSION = "v2-2026-07-02-rebuild";
+const EXPECTED_SCRIPT_VERSION = "v5-2026-07-02-commission";
 const DISCOUNT_RATE=0.08, COMMISSION_RATE=0.10;
 const CHANNELS=["WhatsApp","Website","Walk-in"];
 const CATEGORIES=["Car Club","Influencer","Staff Referral","Other"];
@@ -287,7 +288,7 @@ const SERVICE_GROUPS=[
 ];
 
 /* ================= STATE ================= */
-let STATE={sales:[],promos:[],promoEvents:[],members:[],vehicles:[],serverVersion:null};
+let STATE={sales:[],promos:[],promoEvents:[],members:[],vehicles:[],jobData:[],staff:[],serverVersion:null};
 let BUSY=false, ROLE=null, pinBuffer="";
 let pipeFilter="all", vehQuery="", memberSub="inhouse";
 let logForm=newLogForm();
@@ -313,7 +314,7 @@ async function loadData(){
   const r=await fetch(WEB_APP_URL);const d=await r.json();
   STATE.serverVersion=d.version||null;
   STATE.sales=(d.sales||[]).map(s=>({...s,plate:normalizePlate(s.plate),stage:deriveStage(s)}));
-  STATE.promos=d.promos||[];STATE.promoEvents=d.promoEvents||[];STATE.members=d.members||[];
+  STATE.promos=d.promos||[];STATE.promoEvents=d.promoEvents||[];STATE.members=d.members||[];STATE.jobData=d.jobData||[];STATE.staff=d.staff||[];
   STATE.vehicles=vehiclesFromSales();
   checkServerVersion();
 }
@@ -337,8 +338,8 @@ function memberForPlate(plate){const p=normalizePlate(plate);return STATE.member
 
 function checkServerVersion(){
   const b=document.getElementById("versionBanner");if(!b)return;
-  if(!STATE.serverVersion){b.style.display="block";b.textContent="⚠️ Can't confirm backend version. If actions fail, re-deploy Code.gs as a new version.";return;}
-  if(STATE.serverVersion!==EXPECTED_SCRIPT_VERSION){b.style.display="block";b.innerHTML="⚠️ Backend is OUT OF DATE (running \""+esc(STATE.serverVersion)+"\", app expects \""+esc(EXPECTED_SCRIPT_VERSION)+"\"). Paste the latest Code.gs into the Apps Script bound to THIS sheet, then Deploy → New deployment (or Manage → edit → New version).";return;}
+  if(!STATE.serverVersion){b.style.display="block";b.innerHTML="⚠️ This app is talking to an <b>old backend</b> that doesn't report its version. To fix permanently: open your Sheet → <b>Extensions → Apps Script</b>, paste the latest Code.gs, then <b>Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy</b>. The live URL stays the same. Until then, closing works but new features (Clear balance) may fail.";return;}
+  if(STATE.serverVersion!==EXPECTED_SCRIPT_VERSION){b.style.display="block";b.innerHTML="⚠️ Backend is version \""+esc(STATE.serverVersion)+"\" but this app expects \""+esc(EXPECTED_SCRIPT_VERSION)+"\". In Apps Script (via Sheet → Extensions → Apps Script): paste the latest Code.gs, then Deploy → Manage deployments → edit → New version → Deploy.";return;}
   b.style.display="none";
 }
 
@@ -380,7 +381,7 @@ async function enterApp(){
 
 /* ================= TABS ================= */
 function buildTabs(){
-  const all=[{id:"dashboard",label:"Dashboard",owner:true},{id:"log",label:"Log Sale"},{id:"pipeline",label:"Pipeline"},{id:"vehicles",label:"Vehicles"},{id:"promos",label:"Promo Codes"},{id:"members",label:"Membership"},{id:"reports",label:"Reports",owner:true}];
+  const all=[{id:"dashboard",label:"Dashboard",owner:true},{id:"log",label:"Log Sale"},{id:"pipeline",label:"Pipeline"},{id:"vehicles",label:"Vehicles"},{id:"promos",label:"Promo Codes"},{id:"members",label:"Membership"},{id:"commission",label:"Commission",owner:true},{id:"reports",label:"Reports",owner:true}];
   const tabs=document.getElementById("tabs");tabs.innerHTML="";
   all.filter(t=>!t.owner||ROLE==="owner").forEach((t,i)=>{
     const b=document.createElement("button");b.className="tab"+(i===0?" active":"");b.textContent=t.label;b.dataset.tab=t.id;
@@ -389,7 +390,7 @@ function buildTabs(){
   });
   document.getElementById("panel-"+all.filter(t=>!t.owner||ROLE==="owner")[0].id).classList.add("active");
 }
-function renderAll(){[renderDashboard,renderLog,renderPipeline,renderVehicles,renderPromos,renderMembers,renderReports].forEach(fn=>{try{fn();}catch(e){console.error("render "+fn.name,e);}});}
+function renderAll(){[renderDashboard,renderLog,renderPipeline,renderVehicles,renderPromos,renderMembers,renderCommission,renderReports].forEach(fn=>{try{fn();}catch(e){console.error("render "+fn.name,e);}});}
 
 function showToast(m,e){const t=document.getElementById("toast");t.textContent=m;t.className="toast"+(e?" err":"");t.style.display="block";setTimeout(()=>t.style.display="none",e?6000:2400);}
 
@@ -628,7 +629,8 @@ function renderPipeline(){
     <div class="stat-row"><span>Total <strong>${money(s.finalAmount)}</strong></span><span>Deposit <strong>${money(s.deposit)}</strong></span><span>Balance <strong style="color:${paid?'var(--lime)':bal>0?'var(--warn)':'#fff'};">${paid?"PAID IN FULL":money(bal)}</strong></span></div>
     ${s.promoCode?`<div style="font-size:11.5px;color:var(--lime);margin-top:6px;">Promo: ${esc(s.promoCode)} (${esc(p?p.owner:"unlinked")})</div>`:""}
     <div class="stage-steps">${STAGES.map(st=>`<div class="stage-step ${STAGES.indexOf(st)<=STAGES.indexOf(s.stage)?'done':''}" onclick="moveStage('${s.id}','${st}')">${STAGE_LABELS[st]}</div>`).join("")}</div>
-    <div style="display:flex;gap:8px;margin-top:10px;">${(bal>0&&s.stage!=="Closed")?`<button class="btn-outline" style="flex:1;color:var(--lime);border-color:var(--lime);" onclick="clearBalance('${s.id}')">Mark balance received</button>`:""}<button class="btn-outline" style="flex:1;" onclick="makeReceipt('${s.id}')">Receipt</button>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);" onclick="deleteSale('${s.id}')">Delete</button>`:""}</div></div>`;
+    <div style="display:flex;gap:8px;margin-top:10px;">${(bal>0&&s.stage!=="Closed")?`<button class="btn-outline" style="flex:1;color:var(--lime);border-color:var(--lime);" onclick="clearBalance('${s.id}')">Clear balance</button>`:""}<button class="btn-outline" style="flex:1;" onclick="openJob('${s.id}')">📋 Job & photos</button><button class="btn-outline" style="flex:1;" onclick="makeReceipt('${s.id}')">Receipt</button>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);" onclick="deleteSale('${s.id}')">Delete</button>`:""}</div>
+    ${bal>0?`<button class="btn-outline" style="width:100%;margin-top:8px;color:#00d95f;border-color:#00d95f;" onclick="requestMpesa('${s.id}')">📱 Request ${money(bal)} via M-Pesa (STK push)</button><div id="stk_${s.id}" style="font-size:11.5px;color:#7a7a7a;margin-top:6px;"></div>`:""}</div>`;
   });
   el.innerHTML=html;
 }
@@ -644,16 +646,50 @@ async function moveStage(id,stage){
 }
 async function clearBalance(id){
   if(BUSY)return;const s=STATE.sales.find(x=>x.id===id);if(!s)return;
-  if(!confirm("Mark balance of "+money(saleBalance(s))+" as received? This clears the balance but does NOT close the job."))return;
+  if(!confirm("Clear the balance of "+money(saleBalance(s))+"? The full amount (including the "+money(s.deposit)+" already paid) will be marked as paid in full. This does NOT close the job."))return;
   BUSY=true;
-  try{const res=await api("clearBalance",{id});
+  try{
+    // Routed through setStage with a clearBalance flag — uses an action the
+    // backend already supports, and passes stage:null so the stage is left as-is.
+    const res=await api("setStage",{id,stage:null,clearBalance:true});
     if(!res||res.ok!==true){showToast("Failed: "+((res&&res.error)||"no response"),true);return;}
-    await loadData();showToast("Balance cleared");renderAll();
+    await loadData();showToast("Balance cleared — paid in full");renderAll();
   }catch(e){showToast("Failed: "+(e.message||e),true);}finally{BUSY=false;}
 }
 async function deleteSale(id){
   if(BUSY)return;if(!confirm("Delete this reservation?"))return;BUSY=true;
   try{await api("deleteSale",{id});await loadData();renderAll();showToast("Deleted");}catch(e){showToast("Failed",true);}finally{BUSY=false;}
+}
+// Daraja STK push — sends an M-Pesa prompt to the customer's phone, then
+// polls for completion. On success the sale auto-marks paid with the real receipt.
+let stkPolling={};
+async function requestMpesa(id){
+  const s=STATE.sales.find(x=>x.id===id);if(!s)return;
+  const bal=saleBalance(s);
+  let phone=s.phone||"";
+  phone=prompt("Send M-Pesa prompt for "+money(bal)+" to which number?",phone);
+  if(!phone)return;
+  const statusEl=document.getElementById("stk_"+id);
+  if(statusEl){statusEl.textContent="Sending prompt to "+phone+"…";statusEl.style.color="#7a7a7a";}
+  try{
+    const res=await api("stkPush",{saleId:id,phone,amount:bal});
+    if(!res||res.ok!==true){if(statusEl){statusEl.textContent="M-Pesa: "+((res&&res.error)||"failed");statusEl.style.color="var(--danger)";}return;}
+    if(statusEl){statusEl.textContent="✅ Prompt sent — ask the customer to enter their M-Pesa PIN. Waiting…";statusEl.style.color="#00d95f";}
+    pollStk(id,0);
+  }catch(e){if(statusEl){statusEl.textContent="Failed: "+(e.message||e);statusEl.style.color="var(--danger)";}}
+}
+async function pollStk(id,tries){
+  if(tries>20)return; // ~60s
+  if(stkPolling[id])clearTimeout(stkPolling[id]);
+  stkPolling[id]=setTimeout(async()=>{
+    try{
+      const res=await api("stkStatus",{saleId:id});
+      const statusEl=document.getElementById("stk_"+id);
+      if(res&&res.status==="success"){if(statusEl){statusEl.textContent="✅ Paid in full"+(res.receipt?" · "+res.receipt:"");statusEl.style.color="var(--lime)";}await loadData();renderAll();return;}
+      if(res&&res.status==="failed"){if(statusEl){statusEl.textContent="❌ "+(res.resultDesc||"Payment cancelled or failed");statusEl.style.color="var(--danger)";}return;}
+      pollStk(id,tries+1);
+    }catch(e){pollStk(id,tries+1);}
+  },3000);
 }
 function makeReceipt(id){
   const s=STATE.sales.find(x=>x.id===id);if(!s)return;const bal=saleBalance(s);const paid=isCleared(s);
@@ -689,7 +725,14 @@ function renderVehicleResults(){
   if(vehQuery){const q=vehQuery.trim().toLowerCase();const qP=normalizePlate(vehQuery);const qPh=normalizePhone(vehQuery);
     owners=owners.filter(o=>String(o.clientName||"").toLowerCase().includes(q)||(qPh.length>=3&&normalizePhone(o.phone).includes(qPh))||o.vehicles.some(v=>qP.length>0&&normalizePlate(v.plate).includes(qP)));}
   owners.sort((a,b)=>String(a.clientName||"zzz").localeCompare(String(b.clientName||"zzz")));
-  if(owners.length===0){el.innerHTML=`<div class="empty">${STATE.vehicles.length===0?"No vehicles yet — log a sale with a plate and it appears here instantly.":"No match."}</div>`;return;}
+  if(owners.length===0){
+    const platelessCount=STATE.sales.filter(s=>!normalizePlate(s.plate)).length;
+    let msg;
+    if(vehQuery)msg="No match for that search.";
+    else if(STATE.vehicles.length===0&&platelessCount>0)msg=platelessCount+" older sale"+(platelessCount===1?"":"s")+" have no plate on record, so they don't appear here. Log a new sale with a plate and it shows up instantly.";
+    else msg="No vehicles yet — log a sale with a plate and it appears here instantly.";
+    el.innerHTML=`<div class="empty">${msg}</div>`;return;
+  }
   el.innerHTML=owners.map(o=>{
     const allSales=o.vehicles.flatMap(v=>vehicleSales(v.plate));
     const spent=allSales.filter(s=>isCleared(s)).reduce((a,s)=>a+num(s.finalAmount),0);
@@ -712,21 +755,24 @@ function renderPromos(){
     <label>Code<input id="pr_code" placeholder="e.g. NAIROBICLUB" style="text-transform:uppercase;"></label>
     <label>Partner / owner<input id="pr_owner" placeholder="e.g. Nairobi Car Club"></label>
     <label>Category<select id="pr_cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join("")}</select></label>
+    <label>Commission rate for this partner (%)<input id="pr_rate" type="number" inputmode="numeric" value="10" min="0" max="100"></label>
     <button class="btn" id="pr_add">Add code</button><div id="pr_note" style="font-size:11.5px;color:#7a7a7a;margin-top:8px;"></div></div>
     <div class="section-title">Active codes</div>`;
   if(STATE.promos.length===0)html+=`<div class="empty">No promo codes yet.</div>`;
   else html+=STATE.promos.map(p=>{
     const uses=STATE.sales.filter(s=>String(s.promoCode).toUpperCase()===String(p.code).toUpperCase()).length;
-    return `<div class="item"><div class="item-top"><div><div style="font-weight:700;">${esc(p.code)}</div><div style="font-size:11.5px;color:#8a8a8a;">${esc(p.owner)} · ${esc(p.category)}</div></div><span class="badge">${uses} use${uses===1?"":"s"}</span></div>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);margin-top:8px;" onclick="deletePromo('${p.id}')">Delete</button>`:""}</div>`;
+    const rate=promoRate(p);
+    return `<div class="item"><div class="item-top"><div><div style="font-weight:700;">${esc(p.code)}</div><div style="font-size:11.5px;color:#8a8a8a;">${esc(p.owner)} · ${esc(p.category)} · ${Math.round(rate*100)}% commission</div></div><span class="badge">${uses} use${uses===1?"":"s"}</span></div>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);margin-top:8px;" onclick="deletePromo('${p.id}')">Delete</button>`:""}</div>`;
   }).join("");
   el.innerHTML=html;
   document.getElementById("pr_add").addEventListener("click",addPromo);
 }
+function promoRate(p){const r=Number(p&&p.rate);return (r>0&&r<=1)?r:(r>1?r/100:0.10);}
 async function addPromo(){
-  const code=document.getElementById("pr_code").value.trim();const owner=document.getElementById("pr_owner").value.trim();const category=document.getElementById("pr_cat").value;const note=document.getElementById("pr_note");
+  const code=document.getElementById("pr_code").value.trim();const owner=document.getElementById("pr_owner").value.trim();const category=document.getElementById("pr_cat").value;const rate=Number(document.getElementById("pr_rate").value||10)/100;const note=document.getElementById("pr_note");
   if(!code||!owner){note.textContent="Enter code and partner.";note.style.color="var(--danger)";return;}
   if(BUSY)return;BUSY=true;
-  try{const res=await api("addPromo",{code,owner,category});if(!res||res.ok!==true){note.textContent=(res&&res.error)||"Failed";note.style.color="var(--danger)";return;}await loadData();showToast("Promo added");renderAll();}
+  try{const res=await api("addPromo",{code,owner,category,rate});if(!res||res.ok!==true){note.textContent=(res&&res.error)||"Failed";note.style.color="var(--danger)";return;}await loadData();showToast("Promo added");renderAll();}
   catch(e){note.textContent="Failed";note.style.color="var(--danger)";}finally{BUSY=false;}
 }
 async function deletePromo(id){if(BUSY)return;if(!confirm("Delete this promo code?"))return;BUSY=true;try{await api("deletePromo",{id});await loadData();renderAll();showToast("Deleted");}catch(e){showToast("Failed",true);}finally{BUSY=false;}}
@@ -771,6 +817,85 @@ async function addMember(getPay){
 }
 async function deleteMember(id){if(BUSY)return;if(!confirm("Remove this member?"))return;BUSY=true;try{await api("deleteMember",{id});await loadData();renderAll();showToast("Removed");}catch(e){showToast("Failed",true);}finally{BUSY=false;}}
 
+/* ================= COMMISSION (Phase 6) ================= */
+// Partner commission comes from promo-code sales, at each code's rate.
+// Staff commission comes from sales they logged (loggedBy), at their staff rate.
+// Pending = sale not yet paid in full. Payable = sale cleared/paid in full.
+function staffRate(name){const st=(STATE.staff||[]).find(s=>String(s.name).trim().toLowerCase()===String(name).trim().toLowerCase());return st?promoRate({rate:st.rate}):0.10;}
+
+function partnerCommissionRows(){
+  const map={};
+  STATE.sales.forEach(s=>{
+    if(!s.promoCode)return;
+    const p=promoByCode(s.promoCode);if(!p)return;
+    const rate=promoRate(p);const base=num(s.finalAmount);const comm=Math.round(base*rate);
+    const key=p.owner||p.code;
+    if(!map[key])map[key]={owner:p.owner||p.code,code:p.code,rate:rate,pending:0,payable:0,sales:0};
+    map[key].sales++;
+    if(isCleared(s))map[key].payable+=comm;else map[key].pending+=comm;
+  });
+  return Object.values(map).sort((a,b)=>(b.pending+b.payable)-(a.pending+a.payable));
+}
+function staffCommissionRows(){
+  const map={};
+  STATE.sales.forEach(s=>{
+    const who=String(s.loggedBy||"").trim();if(!who)return;
+    const rate=staffRate(who);const base=num(s.finalAmount);const comm=Math.round(base*rate);
+    if(!map[who])map[who]={name:who,rate:rate,pending:0,payable:0,sales:0};
+    map[who].sales++;
+    if(isCleared(s))map[who].payable+=comm;else map[who].pending+=comm;
+  });
+  return Object.values(map).sort((a,b)=>(b.pending+b.payable)-(a.pending+a.payable));
+}
+let commSub="partner";
+function setCommSub(s){commSub=s;renderCommission();}
+function renderCommission(){
+  const el=document.getElementById("panel-commission");if(!el)return;
+  const partners=partnerCommissionRows();const staff=staffCommissionRows();
+  const pTotP=partners.reduce((a,r)=>a+r.pending,0),pTotY=partners.reduce((a,r)=>a+r.payable,0);
+  const sTotP=staff.reduce((a,r)=>a+r.pending,0),sTotY=staff.reduce((a,r)=>a+r.payable,0);
+  let html=`<button class="btn-outline" style="width:100%;margin-bottom:14px;" onclick="pdfCommission()">📄 Export commission report (PDF)</button>
+  <div class="subtabs"><button class="subtab ${commSub==='partner'?'active':''}" onclick="setCommSub('partner')">Partners</button><button class="subtab ${commSub==='staff'?'active':''}" onclick="setCommSub('staff')">Staff</button></div>`;
+  if(commSub==='partner'){
+    html+=`<div class="cards"><div class="card"><div class="label">Payable now</div><div class="value" style="color:var(--lime);">${money(pTotY)}</div><div class="sub">on paid-in-full sales</div></div><div class="card"><div class="label">Pending</div><div class="value" style="color:var(--warn);">${money(pTotP)}</div><div class="sub">awaiting full payment</div></div></div>`;
+    if(partners.length===0)html+=`<div class="empty">No partner commission yet — log a sale with a promo code.</div>`;
+    else html+=partners.map(r=>`<div class="item"><div class="item-top"><div><div style="font-weight:700;">${esc(r.owner)}</div><div style="font-size:11.5px;color:#8a8a8a;">${esc(r.code)} · ${Math.round(r.rate*100)}% · ${r.sales} sale${r.sales===1?"":"s"}</div></div></div><div class="stat-row"><span>Payable <strong style="color:var(--lime);">${money(r.payable)}</strong></span><span>Pending <strong style="color:var(--warn);">${money(r.pending)}</strong></span></div></div>`).join("");
+  }else{
+    html+=`<div class="cards"><div class="card"><div class="label">Payable now</div><div class="value" style="color:var(--lime);">${money(sTotY)}</div></div><div class="card"><div class="label">Pending</div><div class="value" style="color:var(--warn);">${money(sTotP)}</div></div></div>
+    <div class="section-title">Staff rates</div><div class="form-wrap">
+    <label>Staff name<input id="stf_name"></label>
+    <label>Commission rate (%)<input id="stf_rate" type="number" value="10" min="0" max="100"></label>
+    <button class="btn" id="stf_add">Add / update staff</button><div id="stf_note" style="font-size:11.5px;color:#7a7a7a;margin-top:8px;"></div></div>`;
+    if(staff.length===0)html+=`<div class="empty">No staff commission yet — set a staff name in "Logged by" when saving a sale.</div>`;
+    else html+=staff.map(r=>{const known=(STATE.staff||[]).find(s=>String(s.name).trim().toLowerCase()===r.name.trim().toLowerCase());return `<div class="item"><div class="item-top"><div><div style="font-weight:700;">${esc(r.name)}</div><div style="font-size:11.5px;color:#8a8a8a;">${Math.round(r.rate*100)}% · ${r.sales} sale${r.sales===1?"":"s"}${known?"":" · <span style='color:var(--warn);'>default rate</span>"}</div></div></div><div class="stat-row"><span>Payable <strong style="color:var(--lime);">${money(r.payable)}</strong></span><span>Pending <strong style="color:var(--warn);">${money(r.pending)}</strong></span></div></div>`;}).join("");
+    // list registered staff for editing/removal
+    if((STATE.staff||[]).length)html+=`<div class="section-title">Registered staff</div>`+STATE.staff.map(s=>`<div class="item"><div class="item-top"><div><div style="font-weight:700;">${esc(s.name)}</div><div style="font-size:11.5px;color:#8a8a8a;">${Math.round(promoRate({rate:s.rate})*100)}% commission</div></div><button class="btn-outline" style="color:var(--danger);" onclick="deleteStaff('${s.id}')">Remove</button></div></div>`).join("");
+  }
+  el.innerHTML=html;
+  const addBtn=document.getElementById("stf_add");if(addBtn)addBtn.addEventListener("click",addStaff);
+}
+async function addStaff(){
+  const name=document.getElementById("stf_name").value.trim();const rate=Number(document.getElementById("stf_rate").value||10)/100;const note=document.getElementById("stf_note");
+  if(!name){note.textContent="Enter a staff name.";note.style.color="var(--danger)";return;}
+  const existing=(STATE.staff||[]).find(s=>String(s.name).trim().toLowerCase()===name.toLowerCase());
+  if(BUSY)return;BUSY=true;
+  try{
+    const res=existing?await api("updateStaff",{id:existing.id,name,rate}):await api("addStaff",{name,rate});
+    if(!res||res.ok!==true){note.textContent=(res&&res.error)||"Failed";note.style.color="var(--danger)";return;}
+    await loadData();showToast("Staff saved");renderAll();
+  }catch(e){note.textContent="Failed";note.style.color="var(--danger)";}finally{BUSY=false;}
+}
+async function deleteStaff(id){if(BUSY)return;if(!confirm("Remove this staff member?"))return;BUSY=true;try{await api("deleteStaff",{id});await loadData();renderAll();showToast("Removed");}catch(e){showToast("Failed",true);}finally{BUSY=false;}}
+function pdfCommission(){
+  const partners=partnerCommissionRows();const staff=staffCommissionRows();
+  const row=(name,extra,pay,pend)=>`<tr><td>${esc(name)}<br><span class="muted">${esc(extra)}</span></td><td style="text-align:right;">${money(pay)}</td><td style="text-align:right;">${money(pend)}</td></tr>`;
+  const body=`<h1>Glossmith — Commission report</h1><div class="muted">${new Date().toISOString().slice(0,10)}</div>
+  <h2>Partners</h2>${partners.length?`<table><tr class="tot"><td>Partner</td><td style="text-align:right;">Payable</td><td style="text-align:right;">Pending</td></tr>${partners.map(r=>row(r.owner,r.code+" · "+Math.round(r.rate*100)+"%",r.payable,r.pending)).join("")}<tr class="tot"><td>Total</td><td style="text-align:right;">${money(partners.reduce((a,r)=>a+r.payable,0))}</td><td style="text-align:right;">${money(partners.reduce((a,r)=>a+r.pending,0))}</td></tr></table>`:`<div class="muted">None.</div>`}
+  <h2>Staff</h2>${staff.length?`<table><tr class="tot"><td>Staff</td><td style="text-align:right;">Payable</td><td style="text-align:right;">Pending</td></tr>${staff.map(r=>row(r.name,Math.round(r.rate*100)+"%",r.payable,r.pending)).join("")}<tr class="tot"><td>Total</td><td style="text-align:right;">${money(staff.reduce((a,r)=>a+r.payable,0))}</td><td style="text-align:right;">${money(staff.reduce((a,r)=>a+r.pending,0))}</td></tr></table>`:`<div class="muted">None.</div>`}
+  <div class="muted" style="margin-top:16px;">Payable = commission on sales paid in full. Pending = commission on sales not yet fully paid.</div>`;
+  openPrint(pdfShell("Commission report",body));
+}
+
 /* ================= REPORTS ================= */
 function renderReports(){
   const el=document.getElementById("panel-reports");if(!el)return;
@@ -781,6 +906,7 @@ function renderReports(){
   const outstandingTotal=outstanding.reduce((a,s)=>a+saleBalance(s),0);
   let cash=0,mpesa=0;sales.forEach(s=>{const d=num(s.deposit);if(d<=0)return;if(String(s.paymentMethod)==="Cash")cash+=d;else mpesa+=d;});
   el.innerHTML=`
+  <button class="btn-outline" style="width:100%;margin-bottom:14px;" onclick="pdfFinancialSummary()">📄 Export financial summary (PDF)</button>
   <div class="section-title">Payments collected (cash vs M-Pesa)</div>
   <div class="money-split"><div class="card"><div class="label">M-Pesa</div><div class="value">${money(mpesa)}</div></div><div class="card"><div class="label">Cash</div><div class="value">${money(cash)}</div></div></div>
   <div class="cards"><div class="card"><div class="label">Cleared balances</div><div class="value" style="color:var(--lime);">${money(clearedTotal)}</div><div class="sub">${cleared.length} paid in full</div></div>
@@ -801,6 +927,154 @@ function renderPartnerView(code){
   const el=document.getElementById("partnerView");el.style.display="block";
   el.innerHTML=`<div style="text-align:center;padding:40px 0;"><div class="gate-logo" style="margin:0 auto 18px;">G</div><div class="gate-title">Glossmith</div><div style="font-size:14px;color:#9a9a9a;margin-top:12px;">Show code <strong style="color:var(--lime);">${esc(code.toUpperCase())}</strong> at booking for 8% off.</div></div>`;
   api("validatePromo",{code,source:"link"}).catch(()=>{});
+}
+
+/* ================= JOB DETAIL: photos + checklists + PDF ================= */
+// "What came in the car" — contents present on arrival.
+const CAME_ITEMS=["Spare tyre","Jack & wheel spanner","Floor mats","Phone holder","Charger / cables","Sunglasses","Parking tokens","Cash / valuables","Documents in glovebox","Life-saver / triangle","Fire extinguisher","Boot cover / parcel shelf"];
+// "What's done on the car" is auto-seeded from the sale's services, plus these common extras.
+const DONE_EXTRAS=["Exterior wash","Interior vacuum","Dashboard dressing","Tyre dressing","Glass cleaned","Engine bay wiped","Boot cleaned","Fragrance applied","Test drive done","Keys returned to owner"];
+
+let jobModalSaleId=null, jobModalDraft=null;
+
+function jobDataFor(saleId){return (STATE.jobData||[]).find(j=>j.saleId===saleId)||null;}
+function parseJSON(v,fallback){if(v==null||v==="")return fallback;if(typeof v==="object")return v;try{return JSON.parse(v);}catch(e){return fallback;}}
+
+function openJob(saleId){
+  const s=STATE.sales.find(x=>x.id===saleId);if(!s)return;
+  jobModalSaleId=saleId;
+  const jd=jobDataFor(saleId)||{};
+  // seed "work done" from services on the sale
+  const seeded={};
+  String(s.service||"").split(" + ").forEach(x=>{const t=x.trim();if(t)seeded[t]=true;});
+  jobModalDraft={
+    intakePhotos:parseJSON(jd.intakePhotos,[]),
+    handoverPhotos:parseJSON(jd.handoverPhotos,[]),
+    camePresent:parseJSON(jd.camePresent,{}),
+    workDone:Object.assign(seeded,parseJSON(jd.workDone,{})),
+    intakeNote:jd.intakeNote||"",
+    handoverNote:jd.handoverNote||"",
+  };
+  renderJobModal();
+}
+function closeJob(){jobModalSaleId=null;jobModalDraft=null;const m=document.getElementById("jobModal");if(m)m.remove();}
+
+function renderJobModal(){
+  const s=STATE.sales.find(x=>x.id===jobModalSaleId);if(!s)return;const d=jobModalDraft;
+  let m=document.getElementById("jobModal");
+  if(!m){m=document.createElement("div");m.id="jobModal";m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;overflow-y:auto;padding:16px;";document.body.appendChild(m);}
+  const photoStrip=(arr,kind)=>`<div style="display:flex;gap:8px;overflow-x:auto;padding:4px 0;">${arr.map((u,i)=>`<div style="position:relative;flex:0 0 auto;"><img src="${esc(u)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removePhoto('${kind}',${i})" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;">×</button></div>`).join("")||`<div style="font-size:11.5px;color:#7a7a7a;padding:8px 0;">No photos yet.</div>`}</div>`;
+  const check=(list,obj,kind)=>list.map(it=>`<label style="flex-direction:row;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;color:#d5d5d5;"><input type="checkbox" style="width:auto;" ${obj[it]?"checked":""} onchange="toggleCheck('${kind}',this.getAttribute('data-it'),this.checked)" data-it="${esc(it)}">${esc(it)}</label>`).join("");
+  const workItems=Array.from(new Set([...Object.keys(d.workDone),...DONE_EXTRAS]));
+  m.innerHTML=`<div class="wrap" style="max-width:560px;background:var(--black);border:1px solid var(--border);border-radius:14px;padding:16px;margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:'Space Grotesk';font-weight:700;font-size:16px;">${esc(s.clientName)} · ${esc(formatPlate(s.plate))||"no plate"}</div><button onclick="closeJob()" style="background:none;border:none;color:#9a9a9a;font-size:22px;cursor:pointer;">×</button></div>
+    <div style="font-size:11.5px;color:#8a8a8a;margin-bottom:14px;">${esc(s.service||"")} · ${STAGE_LABELS[s.stage]}</div>
+
+    <div class="section-title">Intake photos (on arrival)</div>${photoStrip(d.intakePhotos,"intakePhotos")}
+    <button class="btn-outline" style="width:100%;margin:6px 0 14px;" onclick="capturePhoto('intakePhotos')">📷 Add intake photo</button>
+
+    <div class="section-title">What came in the car</div><div style="margin-bottom:10px;">${check(CAME_ITEMS,d.camePresent,"camePresent")}</div>
+    <label>Intake notes<textarea id="jm_intakeNote" rows="2" style="background:#0f0f0f;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-family:'Sora';">${esc(d.intakeNote)}</textarea></label>
+
+    <div class="section-title">Handover photos (on completion)</div>${photoStrip(d.handoverPhotos,"handoverPhotos")}
+    <button class="btn-outline" style="width:100%;margin:6px 0 14px;" onclick="capturePhoto('handoverPhotos')">📷 Add handover photo</button>
+
+    <div class="section-title">What's done on the car</div><div style="margin-bottom:10px;">${check(workItems,d.workDone,"workDone")}</div>
+    <label>Handover notes<textarea id="jm_handoverNote" rows="2" style="background:#0f0f0f;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-family:'Sora';">${esc(d.handoverNote)}</textarea></label>
+
+    <button class="btn" style="width:100%;margin-top:8px;" onclick="saveJob()">Save job details</button>
+    <div class="section-title">Export PDF</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn-outline" onclick="pdfJobCard('${s.id}')">📄 Job card / receipt</button>
+      <button class="btn-outline" onclick="pdfHandover('${s.id}')">📄 Handover report (photos + checklists)</button>
+    </div>
+    <div id="jm_note" style="font-size:11.5px;color:#7a7a7a;margin-top:10px;"></div>
+  </div>`;
+}
+function toggleCheck(kind,item,val){jobModalDraft[kind][item]=val;}
+function removePhoto(kind,i){jobModalDraft[kind].splice(i,1);renderJobModal();}
+
+// Capture + compress on-device, then upload to Drive.
+function capturePhoto(kind){
+  const input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";
+  input.onchange=async e=>{
+    const file=e.target.files[0];if(!file)return;
+    const note=document.getElementById("jm_note");note.textContent="Compressing & uploading…";note.style.color="#7a7a7a";
+    try{
+      const dataUrl=await compressImage(file,1280,0.7);
+      const s=STATE.sales.find(x=>x.id===jobModalSaleId);
+      const res=await api("uploadPhoto",{dataUrl,plate:s?s.plate:"",kind});
+      if(!res||res.ok!==true){note.textContent="Upload failed: "+((res&&res.error)||"backend not deployed?");note.style.color="var(--danger)";return;}
+      jobModalDraft[kind].push(res.url);note.textContent="Photo added.";note.style.color="var(--lime)";renderJobModal();
+    }catch(err){note.textContent="Failed: "+(err.message||err);note.style.color="var(--danger)";}
+  };
+  input.click();
+}
+function compressImage(file,maxDim,quality){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();const reader=new FileReader();
+    reader.onload=()=>{img.src=reader.result;};
+    reader.onerror=reject;
+    img.onload=()=>{
+      let{width,height}=img;
+      if(width>height&&width>maxDim){height=height*maxDim/width;width=maxDim;}
+      else if(height>maxDim){width=width*maxDim/height;height=maxDim;}
+      const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
+      canvas.getContext("2d").drawImage(img,0,0,width,height);
+      resolve(canvas.toDataURL("image/jpeg",quality));
+    };
+    img.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function saveJob(){
+  const d=jobModalDraft;const s=STATE.sales.find(x=>x.id===jobModalSaleId);const note=document.getElementById("jm_note");
+  d.intakeNote=document.getElementById("jm_intakeNote").value;d.handoverNote=document.getElementById("jm_handoverNote").value;
+  note.textContent="Saving…";note.style.color="#7a7a7a";
+  try{
+    const res=await api("saveJobData",{saleId:jobModalSaleId,plate:s?s.plate:"",intakePhotos:JSON.stringify(d.intakePhotos),handoverPhotos:JSON.stringify(d.handoverPhotos),camePresent:JSON.stringify(d.camePresent),workDone:JSON.stringify(d.workDone),intakeNote:d.intakeNote,handoverNote:d.handoverNote});
+    if(!res||res.ok!==true){note.textContent="Save failed: "+((res&&res.error)||"backend not deployed?");note.style.color="var(--danger)";return;}
+    await loadData();showToast("Job details saved");note.textContent="Saved.";note.style.color="var(--lime)";
+  }catch(e){note.textContent="Save failed: "+(e.message||e);note.style.color="var(--danger)";}
+}
+
+/* ---- PDF EXPORTS (print-to-PDF via new window) ---- */
+function openPrint(html){const w=window.open("","_blank");w.document.write(html);w.document.close();setTimeout(()=>{try{w.print();}catch(e){}},400);}
+function pdfShell(title,body){return `<html><head><title>${esc(title)}</title><style>body{font-family:sans-serif;padding:28px;max-width:640px;margin:auto;color:#111;}h1{font-size:20px;margin:0 0 2px;}h2{font-size:14px;margin:20px 0 8px;border-bottom:1px solid #eee;padding-bottom:4px;}.muted{color:#777;font-size:12px;}table{width:100%;border-collapse:collapse;margin-top:6px;}td{padding:5px 0;border-bottom:1px solid #eee;font-size:13px;}.tot{font-weight:700;}ul{margin:6px 0;padding-left:18px;font-size:13px;}img{width:31%;margin:1%;border-radius:6px;object-fit:cover;height:120px;}.paid{color:#1a9e3f;font-weight:700;}</style></head><body>${body}</body></html>`;}
+function checklistUL(obj){const on=Object.keys(obj).filter(k=>obj[k]);return on.length?`<ul>${on.map(k=>`<li>${esc(k)}</li>`).join("")}</ul>`:`<div class="muted">None recorded.</div>`;}
+function saleHeader(s){return `<h1>Glossmith</h1><div class="muted">${esc(s.clientName)} · ${esc(formatPlate(s.plate))||"no plate"} · ${esc(s.phone||"")}<br>${String(s.timestamp).slice(0,10)} · ${esc(s.service||"")}</div>`;}
+function pdfJobCard(id){
+  const s=STATE.sales.find(x=>x.id===id);if(!s)return;const bal=saleBalance(s);const paid=isCleared(s);
+  const body=`${saleHeader(s)}<h2>Payment</h2><table>
+    <tr><td>${esc(s.service||"Service")}</td><td style="text-align:right;">${money(s.amount)}</td></tr>
+    ${num(s.discount)>0?`<tr><td>Promo discount</td><td style="text-align:right;">−${money(s.discount)}</td></tr>`:""}
+    <tr class="tot"><td>Total</td><td style="text-align:right;">${money(s.finalAmount)}</td></tr>
+    <tr><td>Paid (${esc(s.paymentMethod||"-")})</td><td style="text-align:right;">${money(s.deposit)}</td></tr>
+    <tr class="tot"><td>Balance</td><td style="text-align:right;" class="${paid?'paid':''}">${paid?"PAID IN FULL":money(bal)}</td></tr></table>`;
+  openPrint(pdfShell("Job card",body));
+}
+function pdfHandover(id){
+  const s=STATE.sales.find(x=>x.id===id);if(!s)return;
+  const jd=jobDataFor(id)||{};
+  const came=parseJSON(jd.camePresent,{}),work=parseJSON(jd.workDone,{});
+  const intake=parseJSON(jd.intakePhotos,[]),handover=parseJSON(jd.handoverPhotos,[]);
+  const body=`${saleHeader(s)}
+    <h2>What came in the car</h2>${checklistUL(came)}${jd.intakeNote?`<div class="muted">Note: ${esc(jd.intakeNote)}</div>`:""}
+    <h2>Intake photos</h2>${intake.length?intake.map(u=>`<img src="${esc(u)}">`).join(""):`<div class="muted">None.</div>`}
+    <h2>What's done on the car</h2>${checklistUL(work)}${jd.handoverNote?`<div class="muted">Note: ${esc(jd.handoverNote)}</div>`:""}
+    <h2>Handover photos</h2>${handover.length?handover.map(u=>`<img src="${esc(u)}">`).join(""):`<div class="muted">None.</div>`}
+    <h2>Payment</h2><table><tr class="tot"><td>Total</td><td style="text-align:right;">${money(s.finalAmount)}</td></tr><tr><td>Paid</td><td style="text-align:right;">${money(s.deposit)}</td></tr><tr class="tot"><td>Balance</td><td style="text-align:right;" class="${isCleared(s)?'paid':''}">${isCleared(s)?"PAID IN FULL":money(saleBalance(s))}</td></tr></table>`;
+  openPrint(pdfShell("Handover report",body));
+}
+function pdfFinancialSummary(){
+  const sales=STATE.sales;const cleared=sales.filter(isCleared);const outstanding=sales.filter(s=>saleBalance(s)>0);
+  let cash=0,mpesa=0;sales.forEach(s=>{const d=num(s.deposit);if(d<=0)return;if(String(s.paymentMethod)==="Cash")cash+=d;else mpesa+=d;});
+  const clearedTotal=cleared.reduce((a,s)=>a+num(s.finalAmount),0);const outTotal=outstanding.reduce((a,s)=>a+saleBalance(s),0);
+  const body=`<h1>Glossmith — Financial summary</h1><div class="muted">${new Date().toISOString().slice(0,10)}</div>
+    <h2>Collections</h2><table><tr><td>M-Pesa</td><td style="text-align:right;">${money(mpesa)}</td></tr><tr><td>Cash</td><td style="text-align:right;">${money(cash)}</td></tr><tr class="tot"><td>Total collected</td><td style="text-align:right;">${money(cash+mpesa)}</td></tr></table>
+    <h2>Balances</h2><table><tr><td>Cleared (paid in full) — ${cleared.length}</td><td style="text-align:right;">${money(clearedTotal)}</td></tr><tr><td>Outstanding — ${outstanding.length}</td><td style="text-align:right;">${money(outTotal)}</td></tr></table>
+    <h2>Outstanding detail</h2>${outstanding.length?`<table>${outstanding.map(s=>`<tr><td>${esc(s.clientName)} · ${esc(formatPlate(s.plate))}</td><td style="text-align:right;">${money(saleBalance(s))}</td></tr>`).join("")}</table>`:`<div class="muted">All clear.</div>`}`;
+  openPrint(pdfShell("Financial summary",body));
 }
 
 /* ================= INIT ================= */
