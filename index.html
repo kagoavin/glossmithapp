@@ -195,7 +195,7 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 const normalizePlate=p=>String(p||"").toUpperCase().replace(/\s+/g,"");
 // Nicely formatted for display only (never used for matching/storage).
 const formatPlate=p=>{const n=normalizePlate(p);return n.length===7?n.slice(0,3)+" "+n.slice(3):n;};
-function showToast(m,e){const t=document.getElementById("toast");t.textContent=m;t.className="toast"+(e?" err":"");t.style.display="block";setTimeout(()=>t.style.display="none",2400);}
+function showToast(m,e){const t=document.getElementById("toast");t.textContent=m;t.className="toast"+(e?" err":"");t.style.display="block";setTimeout(()=>t.style.display="none",e?6000:2400);}
 async function api(action,payload){const r=await fetch(WEB_APP_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,payload:payload||{}})});return r.json();}
 async function loadData(){const r=await fetch(WEB_APP_URL);const d=await r.json();
   STATE.sales=(d.sales||[]).map(s=>({...s,closed:s.closed===true||s.closed==="TRUE"||s.closed==="true",stage:s.stage||deriveStage(s)}));
@@ -279,13 +279,13 @@ async function moveStage(id,stage){
     if(stage==="Closed"){
       if(!confirm("Close this job? The full balance will be marked as paid."))  { BUSY=false; return; }
       const res=await api("markPaid",{id});
-      if(!res||res.ok!==true){showToast("Could not close - check connection and try again",true);BUSY=false;return;}
+      if(!res||res.ok!==true){showToast("Close failed: "+(res&&(res.error||res.message)?(res.error||res.message):"no response from server — id:"+id),true);BUSY=false;return;}
       await loadData();showToast("Closed & paid in full");renderAll();BUSY=false;return;
     }
     const res=await api("setStage",{id,stage});
-    if(!res||res.ok!==true){showToast("Could not update - check connection and try again",true);BUSY=false;return;}
+    if(!res||res.ok!==true){showToast("Update failed: "+(res&&(res.error||res.message)?(res.error||res.message):"no response from server"),true);BUSY=false;return;}
     await loadData();showToast("Moved to "+STAGE_LABELS[stage]);renderAll();
-  }catch(e){showToast("Update failed - try again",true);}finally{BUSY=false;}
+  }catch(e){showToast("Update failed: "+(e&&e.message?e.message:String(e)),true);}finally{BUSY=false;}
 }
 async function deleteSale(id){if(BUSY)return;if(!confirm("Delete this reservation?"))return;BUSY=true;try{await api("deleteSale",{id});await loadData();renderAll();}catch(e){showToast("Failed - try again",true);}finally{BUSY=false;}}
 
@@ -303,7 +303,16 @@ function renderVehicles(){const el=document.getElementById("panel-vehicles");
 function renderVehicleResults(){
   const el=document.getElementById("veh_results");if(!el)return;
   let owners=groupVehiclesByOwner();
-  if(vehQuery){const q=vehQuery.trim().toLowerCase();const qPlate=normalizePlate(vehQuery);owners=owners.filter(o=>String(o.ownerName||"").toLowerCase().includes(q)||String(o.phone||"").includes(q)||o.vehicles.some(v=>normalizePlate(v.plate).includes(qPlate)&&qPlate.length>0));}
+  if(vehQuery){
+    const q=vehQuery.trim().toLowerCase();
+    const qPlate=normalizePlate(vehQuery);
+    const qPhone=normalizePhone(vehQuery);
+    owners=owners.filter(o=>
+      String(o.ownerName||"").toLowerCase().includes(q)
+      || (qPhone.length>=3 && normalizePhone(o.phone).includes(qPhone))
+      || o.vehicles.some(v=>qPlate.length>0 && normalizePlate(v.plate).includes(qPlate))
+    );
+  }
   owners.sort((a,b)=>String(a.ownerName||"zzz").localeCompare(String(b.ownerName||"zzz")));
   if(owners.length===0){el.innerHTML=`<div class="empty">${STATE.vehicles.length===0?"No vehicles yet — they're created automatically the first time you log a sale with a plate number.":"No match for that search."}</div>`;return;}
   el.innerHTML=owners.map(o=>{
