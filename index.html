@@ -89,6 +89,7 @@
   <div class="pin-display" id="pinDisplay"></div>
   <div class="keypad" id="keypad"></div>
   <div class="gate-err" id="gateErr"></div>
+  <div id="buildTag" style="margin-top:28px;font-size:10.5px;color:#4a4a4a;letter-spacing:0.3px;"></div>
 </div>
 <div id="partnerView" class="wrap" style="display:none;"></div>
 <div id="mainApp" class="wrap" style="display:none;">
@@ -96,6 +97,7 @@
   <div class="topbar">
     <div class="brand"><div class="logo">G</div><div><h1>Glossmith <span>Sales</span></h1></div></div>
     <button class="role-chip" id="roleChip" onclick="logout()">Staff · Lock</button>
+    <div style="font-size:9px;color:#3a3a3a;margin-top:4px;text-align:right;">build: <span id="buildTagApp"></span></div>
   </div>
   <div class="tabs" id="tabs"></div>
   <div id="panel-dashboard" class="panel"></div>
@@ -112,7 +114,7 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmMMTy7QJ9-1yOGgS_
 // Must match SCRIPT_VERSION in Code.gs. If the backend response doesn't
 // carry this exact string, the live deployment is running older code —
 // this shows a banner instead of leaving you guessing.
-const EXPECTED_SCRIPT_VERSION = "phase1-2026-07-02-f-pipeline-rewire";
+const EXPECTED_SCRIPT_VERSION = "phase1-2026-07-02-g-vehicles-from-sales";
 const DISCOUNT_RATE=0.08, COMMISSION_RATE=0.10;
 const CHANNELS=["WhatsApp","Website","Walk-in"];
 const CATEGORIES=["Car Club","Influencer","Staff Referral","Other"];
@@ -206,7 +208,22 @@ async function loadData(){const r=await fetch(WEB_APP_URL);const d=await r.json(
   STATE.serverVersion=d.version||null;
   checkServerVersion();
   STATE.sales=(d.sales||[]).map(s=>({...s,closed:s.closed===true||s.closed==="TRUE"||s.closed==="true",stage:s.stage||deriveStage(s)}));
-  STATE.promos=d.promos||[];STATE.promoEvents=d.promoEvents||[];STATE.members=d.members||[];STATE.vehicles=d.vehicles||[];}
+  STATE.promos=d.promos||[];STATE.promoEvents=d.promoEvents||[];STATE.members=d.members||[];
+  STATE.vehicles=vehiclesFromSales();}
+// Derives one vehicle record per distinct plate directly from Sales rows —
+// no separate sheet/save step required. Uses the most recent sale for
+// each plate to fill in owner name, phone, and vehicle class.
+function vehiclesFromSales(){
+  const map={};
+  [...STATE.sales].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)).forEach(s=>{
+    const p=normalizePlate(s.plate);if(!p)return;
+    if(!map[p])map[p]={plate:p,ownerName:"",phone:"",vehicleClass:""};
+    if(s.clientName)map[p].ownerName=s.clientName;
+    if(s.phone)map[p].phone=s.phone;
+    if(s.vehicleClass!==undefined&&s.vehicleClass!==null&&s.vehicleClass!=="")map[p].vehicleClass=s.vehicleClass;
+  });
+  return Object.values(map);
+}
 function findVehicle(plate){const p=normalizePlate(plate);if(!p)return null;return STATE.vehicles.find(v=>normalizePlate(v.plate)===p)||null;}
 function vehicleSales(plate){const p=normalizePlate(plate);return STATE.sales.filter(s=>normalizePlate(s.plate)===p);}
 function deriveStage(s){if(s.closed===true||s.closed==="TRUE"||s.closed==="true")return"Closed";if(Number(s.deposit||0)>0)return"Deposit";return"New";}
@@ -318,7 +335,7 @@ function renderVehicleResults(){
     );
   }
   owners.sort((a,b)=>String(a.ownerName||"zzz").localeCompare(String(b.ownerName||"zzz")));
-  if(owners.length===0){el.innerHTML=`<div class="empty">${STATE.vehicles.length===0?"No vehicles yet — they're created automatically the first time you log a sale with a plate number.":"No match for that search."}</div>`;return;}
+  if(owners.length===0){el.innerHTML=`<div class="empty">${STATE.vehicles.length===0?"No vehicles yet — log a sale with a plate number and it'll appear here immediately.":"No match for that search."}</div>`;return;}
   el.innerHTML=owners.map(o=>{
     const allSales=o.vehicles.flatMap(v=>vehicleSales(v.plate));
     const closedSales=allSales.filter(s=>s.stage==="Closed");
@@ -350,7 +367,7 @@ function makeReceipt(id){const s=STATE.sales.find(x=>x.id===id);if(!s)return;con
 async function renderPartnerView(code){document.getElementById("gate").style.display="none";const el=document.getElementById("partnerView");el.style.display="block";await loadData();const promo=promoByCode(code);if(!promo){el.innerHTML=`<div class="empty">That promo code no longer exists.</div>`;return;}const st=promoStats(code);el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:16px;"><span class="badge lime">Partner view</span></div><div class="item" style="padding:18px;margin-bottom:16px;"><div style="font-size:11px;color:#8a8a8a;text-transform:uppercase;">Promo code</div><div style="font-family:'Space Grotesk';font-weight:700;font-size:24px;color:var(--lime);margin-top:4px;">${esc(promo.code)}</div><div style="font-size:12.5px;color:#9a9a9a;margin-top:2px;">${esc(promo.owner)} &middot; ${esc(promo.category)}</div></div><div class="cards"><div class="card"><div class="label">Applied on site</div><div class="value">${st.siteUses}</div></div><div class="card"><div class="label">Closed sales</div><div class="value">${st.closed}</div></div><div class="card"><div class="label">Your commission</div><div class="value">${money(st.commission)}</div><div class="sub">10% of closed sales</div></div></div><div style="font-size:11.5px;color:#6b6b6b;">Only your code's activity is shown here - no other business figures.</div>`;}
 
 function renderAll(){[renderDashboard,renderLog,renderPipeline,renderVehicles,renderPromos,renderMembers,renderReports].forEach(function(fn){try{fn();}catch(e){console.error("render error in "+fn.name,e);}});}
-(async function init(){if(WEB_APP_URL.includes("YOUR_WEB_APP_URL_HERE")){document.getElementById("gate").style.display="none";const b=document.getElementById("setupBanner");b.style.display="block";b.textContent="Paste your Google Apps Script Web App URL into WEB_APP_URL near the top of this file.";return;}const params=new URLSearchParams(window.location.search);const code=params.get("code");if(code){renderPartnerView(code);return;}buildKeypad();const saved=sessionStorage.getItem("gs_role");if(saved){ROLE=saved;enterApp();}})();
+(async function init(){if(WEB_APP_URL.includes("YOUR_WEB_APP_URL_HERE")){document.getElementById("gate").style.display="none";const b=document.getElementById("setupBanner");b.style.display="block";b.textContent="Paste your Google Apps Script Web App URL into WEB_APP_URL near the top of this file.";return;}const bt=document.getElementById("buildTag");if(bt)bt.textContent="App build: "+EXPECTED_SCRIPT_VERSION;const bt2=document.getElementById("buildTagApp");if(bt2)bt2.textContent=EXPECTED_SCRIPT_VERSION;const params=new URLSearchParams(window.location.search);const code=params.get("code");if(code){renderPartnerView(code);return;}buildKeypad();const saved=sessionStorage.getItem("gs_role");if(saved){ROLE=saved;enterApp();}})();
 </script>
 </body>
 </html>
