@@ -6,13 +6,10 @@
 <title>Glossmith Sales</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-  :root{
-    --black:#121212; --lime:#B8FF00; --white:#FFFFFF; --grey:#3A3A3A;
-    --panel:#1a1a1a; --panel2:#151515; --border:#2a2a2a; --muted:#8a8a8a; --danger:#c9645a; --warn:#c98a3a;
-  }
+  :root{--black:#121212;--lime:#B8FF00;--white:#FFFFFF;--grey:#3A3A3A;--panel:#1a1a1a;--panel2:#151515;--border:#2a2a2a;--muted:#8a8a8a;--danger:#c9645a;--warn:#c98a3a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  body{margin:0;background:var(--black);color:var(--white);font-family:'Sora',sans-serif;padding:0;}
-  .wrap{max-width:760px;margin:0 auto;padding:18px 16px 80px;}
+  body{margin:0;background:var(--black);color:var(--white);font-family:'Sora',sans-serif;}
+  .wrap{max-width:760px;margin:0 auto;padding:18px 16px 90px;}
   #gate{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
   .gate-logo{width:56px;height:56px;border-radius:14px;background:var(--lime);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;color:var(--black);font-size:26px;margin-bottom:18px;}
   .gate-title{font-family:'Space Grotesk';font-weight:700;font-size:22px;margin-bottom:4px;}
@@ -32,7 +29,7 @@
   .role-chip{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;padding:5px 10px;border-radius:999px;background:rgba(184,255,0,0.14);color:var(--lime);cursor:pointer;border:none;}
   .tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:18px;scrollbar-width:none;}
   .tabs::-webkit-scrollbar{display:none;}
-  .tab{display:flex;align-items:center;gap:6px;background:transparent;color:#b5b5b5;border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;font-family:'Space Grotesk';cursor:pointer;white-space:nowrap;}
+  .tab{background:transparent;color:#b5b5b5;border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;font-family:'Space Grotesk';cursor:pointer;white-space:nowrap;}
   .tab.active{background:var(--lime);color:var(--black);border:none;}
   .panel{display:none;}
   .panel.active{display:block;}
@@ -63,7 +60,7 @@
   .stat-row strong{color:var(--white);}
   .promo-hint{font-size:12px;background:rgba(184,255,0,0.08);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:12px;color:var(--lime);}
   .empty{color:#7a7a7a;font-size:13px;padding:24px 0;text-align:center;border:1px dashed var(--border);border-radius:10px;}
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--lime);color:var(--black);font-weight:700;font-size:13px;padding:10px 18px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;z-index:50;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--lime);color:var(--black);font-weight:700;font-size:13px;padding:10px 18px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:none;z-index:50;max-width:90%;text-align:center;}
   .toast.err{background:var(--danger);color:#fff;}
   .method-row{display:flex;gap:8px;margin-bottom:12px;}
   .method-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:#b5b5b5;font-weight:600;font-size:13px;cursor:pointer;}
@@ -71,13 +68,14 @@
   .stage-steps{display:flex;gap:6px;margin-top:10px;}
   .stage-step{flex:1;text-align:center;font-size:10.5px;font-weight:600;padding:6px 2px;border-radius:6px;background:#0f0f0f;border:1px solid var(--border);color:#7a7a7a;cursor:pointer;}
   .stage-step.done{background:rgba(184,255,0,0.12);border-color:var(--lime);color:var(--lime);}
-  .chart{display:flex;align-items:flex-end;gap:6px;height:130px;padding:8px 0;border-bottom:1px solid var(--border);}
-  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;}
-  .bar{width:100%;max-width:34px;background:var(--lime);border-radius:4px 4px 0 0;min-height:2px;}
-  .bar-label{font-size:9.5px;color:#7a7a7a;}
-  .bar-val{font-size:9px;color:#9a9a9a;}
   .setup-url{font-size:11px;color:#7a7a7a;margin:16px;word-break:break-all;}
-  .rank-num{width:22px;height:22px;border-radius:50%;background:#0f0f0f;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--lime);margin-right:8px;}
+  .subtabs{display:flex;gap:8px;margin-bottom:14px;}
+  .subtab{flex:1;text-align:center;background:transparent;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:12.5px;font-weight:700;font-family:'Space Grotesk';color:#b5b5b5;cursor:pointer;}
+  .subtab.active{background:rgba(184,255,0,0.1);border-color:var(--lime);color:var(--lime);}
+  .cart-line{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);font-size:12.5px;}
+  .cart-x{background:none;border:none;color:var(--danger);font-size:18px;line-height:1;cursor:pointer;padding:0 4px;}
+  .money-split{display:flex;gap:10px;margin-bottom:14px;}
+  .money-split .card{flex:1;}
 </style>
 </head>
 <body>
@@ -96,8 +94,10 @@
   <div id="versionBanner" style="display:none;background:var(--danger);color:#fff;font-size:12px;font-weight:600;padding:10px 12px;border-radius:8px;margin-bottom:14px;line-height:1.5;"></div>
   <div class="topbar">
     <div class="brand"><div class="logo">G</div><div><h1>Glossmith <span>Sales</span></h1></div></div>
-    <button class="role-chip" id="roleChip" onclick="logout()">Staff · Lock</button>
-    <div style="font-size:9px;color:#3a3a3a;margin-top:4px;text-align:right;">build: <span id="buildTagApp"></span></div>
+    <div style="text-align:right;">
+      <button class="role-chip" id="roleChip" onclick="logout()">Staff · Lock</button>
+      <div style="font-size:9px;color:#3a3a3a;margin-top:4px;">build: <span id="buildTagApp"></span></div>
+    </div>
   </div>
   <div class="tabs" id="tabs"></div>
   <div id="panel-dashboard" class="panel"></div>
@@ -108,62 +108,81 @@
   <div id="panel-members" class="panel"></div>
   <div id="panel-reports" class="panel"></div>
 </div>
-<div id="toast" class="toast"></div>
+<div class="toast" id="toast"></div>
 <script>
+/* ================= CONFIG ================= */
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmMMTy7QJ9-1yOGgS_Ag-7lX4shk1HOXNxs6p4xoJMfQqmSLY5mvb0UbRkhw9ldeFW/exec";
-// Must match SCRIPT_VERSION in Code.gs. If the backend response doesn't
-// carry this exact string, the live deployment is running older code —
-// this shows a banner instead of leaving you guessing.
-const EXPECTED_SCRIPT_VERSION = "phase1-2026-07-02-g-vehicles-from-sales";
+const EXPECTED_SCRIPT_VERSION = "v2-2026-07-02-rebuild";
 const DISCOUNT_RATE=0.08, COMMISSION_RATE=0.10;
 const CHANNELS=["WhatsApp","Website","Walk-in"];
 const CATEGORIES=["Car Club","Influencer","Staff Referral","Other"];
 const STAGES=["New","Deposit","Progress","Closed"];
 const STAGE_LABELS={New:"New",Deposit:"Deposit paid",Progress:"In progress",Closed:"Closed"};
-
-/* ============================================================
-   SERVICE CATALOG — mirrors glossmith.com pricing exactly (Sedan/SUV).
-   Used to auto-fill the sale amount once staff pick a service + vehicle class.
-   ============================================================ */
 const DETAIL = [
-  { id:"bronze", name:"Bronze — Express Wash & Shine", price:[5000,7000] },
-  { id:"silver", name:"Silver — Household Detail", price:[18000,22000] },
-  { id:"gold", name:"Gold — Complete Detail", price:[40000,50000] },
-  { id:"plat10", name:"Platinum 10H — 2-3 Year Coating", price:[90000,110000] },
-  { id:"plat20", name:"Platinum 20H — Flagship Coating", price:[150000,180000] },
-  { id:"newimport", name:"New Car Detailing", price:[45000,55000] },
+  { id:"none", name:"None", desc:"Skip a full detail — start with just add-ons, film or tint.", price:[0,0] },
+  { id:"bronze", name:"Bronze — Express Wash & Shine", desc:"A regular clean-up that leaves the car looking sharp.", price:[5000,7000], dur:"45–60 min",
+    includes:["Touchless Pink Foam pre-wash + High Foam pH-neutral snow foam, then two-bucket hand wash","Iron-fallout & brake-dust removal","Wheel face, barrel & calliper cleaning, tyre dressing + coating","Tar & adhesive removal from paintwork","Streak-free interior & exterior glass","Full interior vacuum","Dashboard cleaning & UV protection","Hyper dressing — plastics, rubber seals, trim","Ceramic Quick Detailer finish — gloss + short-term water beading (not a full coating)"] },
+  { id:"silver", name:"Silver — Household Detail", desc:"Our most popular package — built for the family car.", price:[18000,22000], badge:"Most popular", dur:"2–3 hours",
+    includes:["Everything in Bronze","Carpet shampoo & extraction, seat shampoo, steam-cleaned door panels","Leather deep clean + fabric & leather protective coating","Light scratch removal — surface marks treated","Door-jamb & shut-line cleaning","Engine bay steam clean, degrease & dressing","Glass watermark removal + glass polishing","Headlight restoration — cleaned and restored","Ceramic Quick Detailer finish"] },
+  { id:"gold", name:"Gold — Complete Detail", desc:"Everything we offer, short of a long-term ceramic coating.", price:[40000,50000], dur:"6–8 hours (full day)",
+    includes:["Everything in Silver","Graphene Pre Wash & Graphene Shampoo two-bucket wash","Clay bar decontamination","Full multi-stage (3-step) machine paint correction","Gloss enhancement, jeweling & paint-chip touch-up","Headlight restoration + Ceramic Headlight Coating","A/C deep clean + endoscope duct inspection","Air-vent sanitisation, headliner, trunk & door-panel detailing","Exterior trim restoration & ceramic coating","Graphene Detail Spray finishing coat + paint condition report"] },
+  { id:"plat10", name:"Platinum 10H — 2-3 Year Coating", desc:"The complete Gold detail plus 2-3 years of ceramic protection.", price:[90000,110000], dur:"2–3 days (incl. cure)",
+    includes:["Everything in Gold — the full 100% detail","Graphene Ceramic Coating (10H) — 2–3 years","Water-repellent Glass Crystal Coating on all glass"] },
+  { id:"plat20", name:"Platinum 20H — Flagship Coating", desc:"The complete Gold detail plus our flagship 4-5 year coating.", price:[150000,180000], badge:"Flagship", dur:"3–5 days (incl. cure)",
+    includes:["Everything in Gold — the full 100% detail","Flagship Graphene Ceramic Coating (20H) — 4–5 years","Water-repellent Glass Crystal Coating on all glass"] },
+  { id:"newimport", name:"New Car Detailing", desc:"A full Gold-level detail plus extra salt & grime decontamination — the ideal first service for a new or freshly imported car.", price:[45000,55000], dur:"2–3 days",
+    includes:["Everything in Gold — incl. multi-stage paint correction","Extra-strength exterior decon — heavy foam, two-bucket, clay bar, arches, barrels, callipers, iron & brake dust","Full interior reset — carpet & seat shampoo, leather deep clean, headliner, A/C health check"] },
 ];
 const ADDONS = [
-  { id:"paintcorr", name:"Paint Correction (3-Step Polish)", price:[22000,28000] },
-  { id:"glasscoat", name:"Glass Coating (standalone)", price:[10000,12000] },
-  { id:"acclean", name:"A/C Deep Clean & Decontamination", price:[3500,4500] },
-  { id:"ceramic10", name:"Ceramic Coating 10H (Standalone)", price:[65000,80000] },
-  { id:"ceramic20", name:"Ceramic Coating 20H (Standalone)", price:[110000,135000] },
+  { id:"paintcorr", name:"Paint Correction (3-Step Polish)", price:[22000,28000], dur:"6–8 hours (full day)",
+    desc:"Clay decon + a full multi-stage machine polish. The best prep before any PPF or coating." },
+  { id:"glasscoat", name:"Glass Coating (standalone)", price:[10000,12000], dur:"45–60 min",
+    desc:"Water-repellent Glass Crystal Coating for windscreen & windows — better rain visibility, easier to clean." },
+  { id:"acclean", name:"A/C Deep Clean & Decontamination", price:[3500,4500], dur:"30–45 min",
+    desc:"Evaporator, ducts & vents deep clean — antibacterial + deodoriser, endoscope duct inspection, air-vent sanitisation and a negative-ion purification tablet. Ideal for Bronze/Silver clients." },
+  { id:"ceramic10", name:"Ceramic Coating 10H (Standalone)", price:[65000,80000], dur:"1–2 days (incl. cure)",
+    desc:"For a well-kept car that just needs the coating — paint correction + Graphene 10H (2–3 yr) + glass coating, without the full Gold detail." },
+  { id:"ceramic20", name:"Ceramic Coating 20H (Standalone)", price:[110000,135000], dur:"2–3 days (incl. cure)",
+    desc:"Our longest-lasting coating on a well-kept car — paint correction + flagship Graphene 20H (4–5 yr) + glass coating, without the full Gold detail." },
 ];
-const MEMBERSHIP_PKG = [
-  { id:"standard", name:"Maintenance Club (per month)", price:[11700,15100] },
-  { id:"ppf", name:"PPF Maintenance Club (per month)", price:[11700,15100] },
+const MEMBERSHIP = [
+  { id:"none", name:"None", desc:"No monthly membership.", price:[0,0] },
+  { id:"standard", name:"Maintenance Club", price:[11700,15100],
+    desc:"Monthly Bronze every visit; every 4th month auto-upgraded to a full Gold detail at no extra cost — around 15% less than booking separately." },
+  { id:"ppf", name:"PPF Maintenance Club", price:[11700,15100],
+    desc:"The same monthly commitment, PPF-safe: Bronze scope with PPF-safe products and a Wrap Detailer finish; every 4th month is a PPF Health & Interior Service — no clay bar or machine polishing that could harm the film. Same price." },
 ];
 const PPF_COV = [
-  { id:"partial", name:"PPF — Partial Front", price:{ xpel:[52000,52000], gloss:[58000,58000], matte:[62000,62000] } },
-  { id:"fullfront", name:"PPF — Full Front", price:{ xpel:[100000,125000], gloss:[140000,170000], matte:[150000,180000] } },
-  { id:"fullbody", name:"PPF — Full Body", price:{ xpel:[180000,220000], gloss:[350000,420000], matte:[370000,440000] } },
+  { id:"none", name:"None", desc:"No paint protection film." },
+  { id:"partial", name:"Partial Front", desc:"Front bumper, ~24in of hood and mirror caps — the highest-impact stone-chip zones. One price, all sizes.",
+    price:{ xpel:[52000,52000], gloss:[58000,58000], matte:[62000,62000] } },
+  { id:"fullfront", name:"Full Front", desc:"Full bumper, hood, fenders, mirrors and headlights — our most popular PPF package.", badge:"Most popular",
+    price:{ xpel:[100000,125000], gloss:[140000,170000], matte:[150000,180000] } },
+  { id:"fullbody", name:"Full Body", desc:"Complete edge-to-edge exterior coverage — total long-term protection.",
+    price:{ xpel:[180000,220000], gloss:[350000,420000], matte:[370000,440000] } },
 ];
 const PPF_FILM = [
-  { id:"xpel", name:"XPEL Ultimate Plus" },
-  { id:"gloss", name:"3M Scotchgard Pro 200 — Glossy" },
-  { id:"matte", name:"3M Scotchgard Pro 200 — Matte" },
+  { id:"xpel", name:"XPEL Ultimate Plus", sub:"Self-healing, high-clarity — our value pick" },
+  { id:"gloss", name:"3M Scotchgard Pro 200 — Glossy", sub:"Genuine 3M, glossy finish" },
+  { id:"matte", name:"3M Scotchgard Pro 200 — Matte", sub:"Genuine 3M, satin matte finish" },
 ];
 const TINT_COV = [
-  { id:"fullcar", name:"Tint — Full Car", price:{ chinese:[25000,27500], ctx:[55000,59000], irx:[72000,77000] } },
-  { id:"sidesrear", name:"Tint — Sides + Rear", price:{ chinese:[18000,20000], ctx:[39000,42000], irx:[51500,55000] } },
-  { id:"windscreen", name:"Tint — Windscreen Only", price:{ chinese:[7000,8000], ctx:[16000,17000], irx:[20500,22000] } },
+  { id:"none", name:"None", desc:"No window tint." },
+  { id:"fullcar", name:"Full Car", desc:"All glass, including the windscreen.",
+    price:{ chinese:[25000,27500], ctx:[55000,59000], irx:[72000,77000] } },
+  { id:"sidesrear", name:"Sides + Rear", desc:"All glass except the windscreen.",
+    price:{ chinese:[18000,20000], ctx:[39000,42000], irx:[51500,55000] } },
+  { id:"windscreen", name:"Windscreen Only", desc:"Front windscreen only.",
+    price:{ chinese:[7000,8000], ctx:[16000,17000], irx:[20500,22000] } },
 ];
 const TINT_FILM = [
-  { id:"chinese", name:"Chinese (Value)" },
-  { id:"ctx", name:"Llumar CTX (Mid)" },
-  { id:"irx", name:"Llumar IRX / 3M Crystalline (Top)" },
+  { id:"chinese", name:"Chinese (Value)", sub:"Solid heat & UV rejection at an accessible price" },
+  { id:"ctx", name:"Llumar CTX (Mid)", sub:"Premium ceramic, lifetime warranty, ~70% heat rejection" },
+  { id:"irx", name:"Llumar IRX / 3M Crystalline (Top)", sub:"~86%+ heat rejection, lifetime warranty, total clarity" },
 ];
+
+/* ============================================================ STATE */
+/* Problem-based menu — à la carte fixes priced from the costing model & benchmarked to package rates [saloon, SUV] */
 const PROBLEMS = [
   { id:"wash",       group:"Exterior", name:"Dirty / dusty bodywork",            fix:"Exterior wash & shine",           price:[5000,7000] },
   { id:"heavy",      group:"Exterior", name:"Very dirty — mud, caked-on grime",  fix:"Heavy decontamination wash",      price:[8000,10000] },
@@ -182,43 +201,130 @@ const PROBLEMS = [
   { id:"engine",     group:"Extras",   name:"Dirty engine bay",                  fix:"Engine bay clean & dress",        price:[4000,5000] },
   { id:"newcar",     group:"Extras",   name:"Brand-new imported car",            fix:"New Car Detailing (salt decon)",  price:[45000,55000] },
 ];
+const VEHICLES = {
+    'BYD':           { models: ['Atto 3','Dolphin','Seal','Seal U','Han','Tang','Song Plus','Yuan Plus','Qin Plus','Shark'], type: {'Atto 3':'suv','Seal U':'suv',Tang:'large_suv','Song Plus':'suv','Yuan Plus':'suv',Shark:'truck'} },
+    'Changan':       { models: ['CS35 Plus','CS55 Plus','CS75 Plus','UNI-T','UNI-K','Eado','Alsvin','Hunter'], type: {'CS35 Plus':'suv','CS55 Plus':'suv','CS75 Plus':'suv','UNI-T':'suv','UNI-K':'large_suv',Hunter:'truck'} },
+    'Chery':         { models: ['Tiggo 2 Pro','Tiggo 4 Pro','Tiggo 7 Pro','Tiggo 8 Pro','Arrizo 5','Arrizo 6','Arrizo 8'], type: {'Tiggo 2 Pro':'suv','Tiggo 4 Pro':'suv','Tiggo 7 Pro':'suv','Tiggo 8 Pro':'large_suv'} },
+    'Dongfeng':      { models: ['Rich 6','AX7','580','T5 Evo'], type: {'Rich 6':'truck',AX7:'suv','580':'suv','T5 Evo':'suv'} },
+    'Foton':         { models: ['Tunland','Tunland G7','View','Aumark','Sauvana'], type: {Tunland:'truck','Tunland G7':'truck',View:'truck',Aumark:'truck',Sauvana:'large_suv'} },
+    'Geely':         { models: ['Coolray','Azkarra','Atlas','Tugella','Okavango','Emgrand','Preface','Monjaro','Geometry C'], type: {Coolray:'suv',Azkarra:'suv',Atlas:'suv',Tugella:'suv',Okavango:'large_suv',Monjaro:'suv','Geometry C':'suv'} },
+    'GWM':           { models: ['Poer','Wingle 5','Wingle 7','Haval H6','Haval Jolion','Tank 300','Tank 500','Ora 03'], type: {Poer:'truck','Wingle 5':'truck','Wingle 7':'truck','Haval H6':'suv','Haval Jolion':'suv','Tank 300':'suv','Tank 500':'large_suv'} },
+    'Haval':         { models: ['H6','Jolion','Dargo','H9','Big Dog'], type: {H6:'suv',Jolion:'suv',Dargo:'suv',H9:'large_suv','Big Dog':'suv'} },
+    'Hongqi':        { models: ['H5','H9','HS5','HS7','E-HS9'], type: {HS5:'suv',HS7:'large_suv','E-HS9':'large_suv'} },
+    'JAC':           { models: ['T6','T8','T9','S2','S3','S4','JS4','J7'], type: {T6:'truck',T8:'truck',T9:'truck',S2:'suv',S3:'suv',S4:'suv',JS4:'suv'} },
+    'Jetour':        { models: ['Dashing','X70','X70 Plus','X90','X95'], type: {Dashing:'suv',X70:'suv','X70 Plus':'suv',X90:'large_suv',X95:'large_suv'} },
+    'Maxus':         { models: ['T60','T70','T90','D90','G10','G50'], type: {T60:'truck',T70:'truck',T90:'truck',D90:'large_suv',G10:'truck',G50:'suv'} },
+    'MG':            { models: ['MG3','MG5','MG ZS','MG HS','MG RX5','MG One','MG GT','MG4'], type: {'MG ZS':'suv','MG HS':'suv','MG RX5':'suv','MG One':'suv'} },
+    'Omoda':         { models: ['Omoda 5','Omoda C5'], type: {'Omoda 5':'suv','Omoda C5':'suv'} },
+    'Wuling':        { models: ['Bingo','Hongguang','Almaz'], type: {Almaz:'suv'} },
+    'Zeekr':         { models: ['001','007','X','7X'], type: {X:'suv','7X':'suv'} },
+    'Acura':         { models: ['ILX','Integra','MDX','NSX','RDX','RLX','TL','TLX','TSX','ZDX'], type: {MDX:'suv',RDX:'suv',ZDX:'suv'} },
+    'Alfa Romeo':    { models: ['4C','Giulia','Stelvio','Tonale'], type: {Stelvio:'suv',Tonale:'suv'} },
+    'Aston Martin':  { models: ['DB11','DB12','DBS','DBX','Rapide','Vantage'], type: {DBX:'suv'} },
+    'Audi':          { models: ['A3','A4','A5','A6','A7','A8','e-tron','e-tron GT','Q3','Q4 e-tron','Q5','Q7','Q8','R8','RS3','RS5','RS6','RS7','S3','S4','S5','S6','S7','S8','SQ5','SQ7','SQ8','TT'], type: {Q3:'suv','Q4 e-tron':'suv',Q5:'suv',Q7:'suv',Q8:'suv',SQ5:'suv',SQ7:'suv',SQ8:'suv','e-tron':'suv'} },
+    'Bentley':       { models: ['Bentayga','Continental GT','Flying Spur','Mulsanne'], type: {Bentayga:'large_suv'} },
+    'BMW':           { models: ['1 Series','2 Series','3 Series','4 Series','5 Series','7 Series','8 Series','i3','i4','i7','iX','M2','M3','M4','M5','M8','X1','X2','X3','X4','X5','X6','X7','XM','Z4'], type: {X1:'suv',X2:'suv',X3:'suv',X4:'suv',X5:'suv',X6:'suv',X7:'large_suv',XM:'suv',iX:'suv'} },
+    'Buick':         { models: ['Enclave','Encore','Encore GX','Envision','LaCrosse'], type: {Enclave:'large_suv',Encore:'suv','Encore GX':'suv',Envision:'suv'} },
+    'Cadillac':      { models: ['CT4','CT5','CT6','Escalade','Escalade ESV','Lyriq','XT4','XT5','XT6'], type: {Escalade:'large_suv','Escalade ESV':'large_suv',XT4:'suv',XT5:'suv',XT6:'large_suv',Lyriq:'suv'} },
+    'Chevrolet':     { models: ['Blazer','Bolt EV','Bolt EUV','Camaro','Colorado','Corvette','Equinox','Express','Malibu','Silverado 1500','Silverado 2500HD','Silverado 3500HD','Spark','Suburban','Tahoe','Trailblazer','Traverse','Trax'], type: {Blazer:'suv',Equinox:'suv',Suburban:'large_suv',Tahoe:'large_suv',Traverse:'large_suv',Trailblazer:'suv',Trax:'suv',Colorado:'truck','Silverado 1500':'truck','Silverado 2500HD':'truck','Silverado 3500HD':'truck',Express:'truck'} },
+    'Chrysler':      { models: ['300','Pacifica','Voyager'], type: {Pacifica:'suv'} },
+    'Dodge':         { models: ['Challenger','Charger','Durango','Grand Caravan','Hornet'], type: {Durango:'large_suv',Hornet:'suv'} },
+    'Ferrari':       { models: ['296 GTB','488','812 Superfast','California','F8 Tributo','GTC4Lusso','Portofino','Purosangue','Roma','SF90 Stradale'], type: {Purosangue:'suv'} },
+    'Ford':          { models: ['Bronco','Bronco Sport','Edge','Escape','Expedition','Expedition MAX','Explorer','F-150','F-150 Lightning','F-250 Super Duty','F-350 Super Duty','Maverick','Mustang','Mustang Mach-E','Ranger','Transit'], type: {Bronco:'suv','Bronco Sport':'suv',Edge:'suv',Escape:'suv',Expedition:'large_suv','Expedition MAX':'large_suv',Explorer:'large_suv','Mustang Mach-E':'suv',Maverick:'truck',Ranger:'truck','F-150':'truck','F-150 Lightning':'truck','F-250 Super Duty':'truck','F-350 Super Duty':'truck',Transit:'truck'} },
+    'Genesis':       { models: ['G70','G80','G90','GV70','GV80','GV90'], type: {GV70:'suv',GV80:'suv',GV90:'large_suv'} },
+    'GMC':           { models: ['Acadia','Canyon','Sierra 1500','Sierra 2500HD','Sierra 3500HD','Terrain','Yukon','Yukon XL'], type: {Acadia:'large_suv',Terrain:'suv',Yukon:'large_suv','Yukon XL':'large_suv',Canyon:'truck','Sierra 1500':'truck','Sierra 2500HD':'truck','Sierra 3500HD':'truck'} },
+    'Honda':         { models: ['Fit / Jazz','Freed','Grace','Civic / Ferio','Accord / Inspire','Insight','Vezel / HR-V','CR-V','ZR-V','Pilot','Passport','Odyssey','Stepwgn','Shuttle','N-Box','N-One','S660','Ridgeline','Prologue'], type: {'Vezel / HR-V':'suv','CR-V':'suv','ZR-V':'suv',Passport:'suv',Pilot:'large_suv',Prologue:'suv',Odyssey:'van',Stepwgn:'van',Freed:'van',Ridgeline:'truck','Accord / Inspire':'','Civic / Ferio':'','Fit / Jazz':'','Grace':'','Shuttle':'','N-Box':'','N-One':''} },
+    'Hyundai':       { models: ['Accent','Elantra','IONIQ 5','IONIQ 6','IONIQ 7','Kona','Palisade','Santa Cruz','Santa Fe','Sonata','Tucson','Venue'], type: {Kona:'suv',Palisade:'large_suv','Santa Fe':'suv',Tucson:'suv',Venue:'suv','IONIQ 5':'suv','IONIQ 7':'large_suv','Santa Cruz':'truck'} },
+    'Infiniti':      { models: ['Q50','Q60','QX50','QX55','QX60','QX80'], type: {QX50:'suv',QX55:'suv',QX60:'large_suv',QX80:'large_suv'} },
+    'Jaguar':        { models: ['E-Pace','F-Pace','F-Type','I-Pace','XE','XF','XJ'], type: {'E-Pace':'suv','F-Pace':'suv','I-Pace':'suv'} },
+    'Jeep':          { models: ['Cherokee','Compass','Gladiator','Grand Cherokee','Grand Cherokee L','Grand Wagoneer','Renegade','Wagoneer','Wrangler','Wrangler 4xe'], type: {Cherokee:'suv',Compass:'suv','Grand Cherokee':'suv','Grand Cherokee L':'large_suv','Grand Wagoneer':'large_suv',Renegade:'suv',Wagoneer:'large_suv',Wrangler:'suv','Wrangler 4xe':'suv',Gladiator:'truck'} },
+    'Kia':           { models: ['Carnival','EV6','EV9','Forte','K5','Niro','Seltos','Sorento','Soul','Sportage','Stinger','Telluride'], type: {Niro:'suv',Seltos:'suv',Sorento:'suv',Telluride:'large_suv',Sportage:'suv',Soul:'suv',EV9:'large_suv',EV6:'suv',Carnival:'suv'} },
+    'Lamborghini':   { models: ['Huracan','Revuelto','Urus','Sterrato'], type: {Urus:'suv'} },
+    'Land Rover':    { models: ['Defender','Discovery','Discovery Sport','Range Rover','Range Rover Evoque','Range Rover Sport','Range Rover Velar'], type: {Defender:'suv',Discovery:'large_suv','Discovery Sport':'suv','Range Rover':'large_suv','Range Rover Evoque':'suv','Range Rover Sport':'suv','Range Rover Velar':'suv'} },
+    'Lexus':         { models: ['ES','GS','GX','IS','LC','LS','LX','LX600','LX570','LX450d','NX','RC','RX','TX','UX'], type: {GX:'suv',LX:'large_suv',LX600:'large_suv',LX570:'large_suv',LX450d:'large_suv',NX:'suv',RX:'suv',TX:'large_suv',UX:'suv'} },
+    'Lincoln':       { models: ['Aviator','Corsair','MKZ','Nautilus','Navigator','Navigator L'], type: {Aviator:'large_suv',Corsair:'suv',Nautilus:'suv',Navigator:'large_suv','Navigator L':'large_suv'} },
+    'Maserati':      { models: ['Ghibli','Grecale','GranTurismo','Levante','MC20','Quattroporte'], type: {Levante:'suv',Grecale:'suv'} },
+    'Mazda':         { models: ['Mazda2 / Demio','Mazda3 / Axela','Mazda6 / Atenza','CX-3','CX-30','CX-5','CX-50','CX-60','CX-70','CX-80','CX-90','Premacy','Biante','MPV','BT-50','MX-5 Miata / Roadster','MX-30'], type: {'CX-3':'suv','CX-30':'suv','CX-5':'suv','CX-50':'suv','CX-60':'suv','CX-70':'large_suv','CX-80':'large_suv','CX-90':'large_suv','MX-30':'suv','Premacy':'van','Biante':'van','MPV':'van','BT-50':'truck','Mazda2 / Demio':'','Mazda3 / Axela':'','Mazda6 / Atenza':'','MX-5 Miata / Roadster':''} },
+    'Suzuki':        { models: ['Alto','Swift','Baleno','Celerio','Ignis','Wagon R','Solio','Vitara / Escudo','Jimny','SX4 S-Cross','Ertiga','Every','Carry'], type: {'Vitara / Escudo':'suv',Jimny:'suv','SX4 S-Cross':'suv',Ertiga:'van',Solio:'van',Every:'van',Carry:'truck'} },
+    'Daihatsu':      { models: ['Mira','Move','Boon','Sirion','Tanto','Cast','Terios','Rocky','Hijet','Gran Max'], type: {Terios:'suv',Rocky:'suv',Hijet:'van','Gran Max':'van'} },
+    'Isuzu':         { models: ['D-Max','MU-X','Bighorn','Wizard','ELF'], type: {'MU-X':'large_suv',Bighorn:'large_suv',Wizard:'suv','D-Max':'truck',ELF:'truck'} },
+    'McLaren':       { models: ['570S','600LT','720S','750S','765LT','Artura','GT','Senna'] },
+    'Mercedes-Benz': { models: ['A-Class','AMG GT','C-Class','C180','C200','C220d','C250','C300','C43 AMG','C63 AMG','CLA','CLS','E-Class','E200','E220d','E250','E300','E350','E400','E450','E63 AMG','EQB','EQC','EQE','EQS','G-Class','GLA','GLB','GLC','GLE','GLS','S-Class','SL'], type: {GLA:'suv',GLB:'suv',GLC:'suv',GLE:'suv',GLS:'large_suv','G-Class':'suv',EQB:'suv',EQC:'suv',EQE:'suv',EQS:'suv'} },
+    'MINI':          { models: ['Clubman','Convertible','Countryman','Hardtop'], type: {Countryman:'suv'} },
+    'Mitsubishi':    { models: ['Eclipse Cross','Mirage / Attrage','Outlander','Outlander PHEV','Outlander Sport / ASX','Delica','Pajero / Montero','Galant Fortis / Lancer'], type: {'Eclipse Cross':'suv',Outlander:'suv','Outlander PHEV':'suv','Outlander Sport / ASX':'suv',Delica:'suv','Pajero / Montero':'large_suv','Mirage / Attrage':'','Galant Fortis / Lancer':''} },
+    'Nissan':        { models: ['Note','Note Nismo','Note e-Power','X-Trail','Juke','Qashqai / Dualis','Serena','Tiida','Sylphy','Wingroad','Navara','Altima','Armada','Frontier','GT-R','Kicks','Leaf','Maxima','Murano','Pathfinder','Rogue','Rogue Sport','Sentra','Titan','Titan XD','Z'], type: {'X-Trail':'suv',Juke:'suv','Qashqai / Dualis':'suv',Serena:'van',Navara:'truck',Armada:'large_suv',Kicks:'suv',Murano:'suv',Pathfinder:'large_suv',Rogue:'suv','Rogue Sport':'suv',Frontier:'truck',Titan:'truck','Titan XD':'truck'} },
+    'Porsche':       { models: ['718 Boxster','718 Cayman','911','Cayenne','Cayenne Coupe','Macan','Panamera','Taycan'], type: {Cayenne:'suv','Cayenne Coupe':'suv',Macan:'suv'} },
+    'RAM':           { models: ['1500','1500 Classic','2500','3500','ProMaster','ProMaster City'], type: {'1500':'truck','1500 Classic':'truck','2500':'truck','3500':'truck',ProMaster:'truck','ProMaster City':'truck'} },
+    'Rivian':        { models: ['R1S','R1T'], type: {R1S:'large_suv',R1T:'truck'} },
+    'Rolls-Royce':   { models: ['Cullinan','Dawn','Ghost','Phantom','Spectre','Wraith'], type: {Cullinan:'large_suv'} },
+    'Subaru':        { models: ['Ascent','BRZ / Toyota GR86','Crosstrek / XV','Forester','Impreza','Legacy / Liberty','Outback','Solterra','WRX / Impreza WRX','Levorg','Exiga'], type: {Ascent:'large_suv','BRZ / Toyota GR86':'','Crosstrek / XV':'suv',Forester:'suv',Outback:'suv',Solterra:'suv','Legacy / Liberty':'','WRX / Impreza WRX':'','Levorg':''} },
+    'Tesla':         { models: ['Cybertruck','Model 3','Model S','Model X','Model Y'], type: {'Model X':'suv','Model Y':'suv',Cybertruck:'truck'} },
+    'Toyota':        { models: ['Vitz / Yaris','Passo','Aqua','Corolla / Auris','Corolla Fielder','Premio','Allion','Belta','Camry','Crown','Mark X','Avalon / Camry XV70','Prius','C-HR','Corolla Cross','RAV4','RAV4 Prime','Harrier','Venza','Rush','Fortuner','4Runner','Land Cruiser','Land Cruiser Prado','Sequoia','Highlander / Kluger','bZ4X','Sienta','Noah / Voxy','Esquire','Alphard','Vellfire','Wish','Isis','Ractis','Porte','Probox / Succeed','Hiace','Hilux','Tacoma','Tundra','86 / GT86','GR86','GR Supra / A90 Supra','Mirai'], type: {'Rush':'suv','Fortuner':'suv','4Runner':'suv','C-HR':'suv','Corolla Cross':'suv','Harrier':'suv','Venza':'suv','bZ4X':'suv','Highlander / Kluger':'large_suv','Land Cruiser':'large_suv','Land Cruiser Prado':'large_suv',Sequoia:'large_suv','RAV4':'suv','RAV4 Prime':'suv','Sienta':'van','Noah / Voxy':'van',Esquire:'van',Alphard:'van',Vellfire:'van',Wish:'van',Isis:'van',Hiace:'van','Probox / Succeed':'van',Hilux:'truck',Tacoma:'truck',Tundra:'truck'} },
+    'Volkswagen':    { models: ['Arteon','Atlas','Atlas Cross Sport','Golf','Golf GTI','ID.4','ID.Buzz','Jetta','Passat','Taos','Tiguan'], type: {Atlas:'large_suv','Atlas Cross Sport':'suv','ID.4':'suv','ID.Buzz':'suv',Taos:'suv',Tiguan:'suv'} },
+    'Volvo':         { models: ['C40 Recharge','EX30','EX40','EX90','S60','S90','V60','V90','XC40','XC60','XC90'], type: {'C40 Recharge':'suv',EX30:'suv',EX40:'suv',EX90:'large_suv',XC40:'suv',XC60:'suv',XC90:'large_suv'} },
+    'Vauxhall':      { models: ['Corsa','Astra','Insignia','Adam','Mokka','Crossland','Grandland','Vivaro'], type: {Mokka:'suv',Crossland:'suv',Grandland:'suv',Vivaro:'van'} },
+    'MG':            { models: ['MG3','MG4','MG5','MG ZS','MG HS','MG RX5'], type: {'MG ZS':'suv','MG HS':'suv','MG RX5':'suv'} },
+    'Peugeot':       { models: ['108','208','308','508','2008','3008','5008','Partner','Rifter'], type: {'2008':'suv','3008':'suv','5008':'large_suv',Partner:'van',Rifter:'van'} },
+    'Renault':       { models: ['Clio','Megane','Captur','Kadjar','Koleos','Duster','Kangoo','Trafic'], type: {Captur:'suv',Kadjar:'suv',Koleos:'suv',Duster:'suv',Kangoo:'van',Trafic:'van'} },
+    'Citroen':       { models: ['C1','C3','C3 Aircross','C4','C5 Aircross','Berlingo'], type: {'C3 Aircross':'suv','C5 Aircross':'suv',Berlingo:'van'} },
+    'Fiat':          { models: ['500','500X','Panda','Tipo','Doblo'], type: {'500X':'suv',Doblo:'van'} },
+    'Skoda':         { models: ['Fabia','Scala','Octavia','Superb','Kamiq','Karoq','Kodiaq','Enyaq'], type: {Kamiq:'suv',Karoq:'suv',Kodiaq:'large_suv',Enyaq:'suv'} },
+    'SEAT':          { models: ['Ibiza','Leon','Arona','Ateca','Tarraco'], type: {Arona:'suv',Ateca:'suv',Tarraco:'large_suv'} },
+    'Bentley':       { models: ['Bentayga','Continental GT','Flying Spur','Mulsanne'], type: {Bentayga:'large_suv'} },
+    'Aston Martin':  { models: ['DB11','DB12','DBS','Vantage','DBX','Rapide'], type: {DBX:'suv'} },
+  };
+const TYPE_MAP={suv:{v:1,label:"SUV / Crossover — SUV pricing"},large_suv:{v:1,label:"Large SUV — SUV pricing"},truck:{v:1,label:"Pickup / van — SUV pricing"},van:{v:1,label:"Van — SUV pricing"}};
+const SALOON_RESULT={v:0,label:"Saloon / sedan / hatchback — saloon pricing"};
+function detectClass(make,model){const entry=VEHICLES[make];const t=entry&&entry.type?entry.type[model]:undefined;const r=TYPE_MAP[t]||SALOON_RESULT;return{v:r.v,label:r.label};}
+
+/* ================= SERVICE CATALOG (mirrors glossmith.com) ================= */
 const SERVICE_GROUPS=[
-  {id:"package",label:"Package",items:DETAIL},
+  {id:"package",label:"Package",items:DETAIL.filter(d=>d.id!=="none")},
   {id:"addon",label:"Add-on",items:ADDONS},
-  {id:"membership",label:"Membership",items:MEMBERSHIP_PKG},
-  {id:"ppf",label:"PPF",items:PPF_COV},
-  {id:"tint",label:"Window Tint",items:TINT_COV},
+  {id:"ppf",label:"PPF",items:PPF_COV.filter(p=>p.id!=="none")},
+  {id:"tint",label:"Window Tint",items:TINT_COV.filter(t=>t.id!=="none")},
   {id:"problem",label:"By Problem",items:PROBLEMS},
 ];
 
-let STATE={sales:[],promos:[],promoEvents:[],members:[],vehicles:[]};
-let BUSY=false;
-let ROLE=null, pinBuffer="";
-let logForm={paymentMethod:"M-Pesa",closed:false,cashConfirmed:false,vehicleClass:0,svcGroup:"package",svcItem:"",svcFilm:"",cart:[],noteEdited:false};
+/* ================= STATE ================= */
+let STATE={sales:[],promos:[],promoEvents:[],members:[],vehicles:[],serverVersion:null};
+let BUSY=false, ROLE=null, pinBuffer="";
+let pipeFilter="all", vehQuery="", memberSub="inhouse";
+let logForm=newLogForm();
+function newLogForm(){return{plate:"",model:"",make:"",clientName:"",phone:"",vehicleClass:0,channel:"WhatsApp",svcGroup:"package",svcItem:"",svcFilm:"",cart:[],noteEdited:false,paymentMethod:"M-Pesa",cashConfirmed:false,closed:false};}
+
+/* ================= HELPERS ================= */
 const money=n=>"KSh "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:0});
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-// Canonical plate form for storage/matching: uppercase, no spaces at all —
-// so "KDS 112Z" and "KDS112Z" are always treated as the same vehicle.
 const normalizePlate=p=>String(p||"").toUpperCase().replace(/\s+/g,"");
-// Nicely formatted for display only (never used for matching/storage).
 const formatPlate=p=>{const n=normalizePlate(p);return n.length===7?n.slice(0,3)+" "+n.slice(3):n;};
-function showToast(m,e){const t=document.getElementById("toast");t.textContent=m;t.className="toast"+(e?" err":"");t.style.display="block";setTimeout(()=>t.style.display="none",e?6000:2400);}
-async function api(action,payload){const r=await fetch(WEB_APP_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,payload:payload||{}})});return r.json();}
-async function loadData(){const r=await fetch(WEB_APP_URL);const d=await r.json();
+const normalizePhone=phone=>{const d=String(phone||"").replace(/\D/g,"");return d.length>=9?d.slice(-9):d;};
+function num(v){return Number(v||0);}
+function saleBalance(s){return Math.max(0,num(s.finalAmount)-num(s.deposit));}
+function isCleared(s){return num(s.finalAmount)>0 && saleBalance(s)===0;}
+function deriveStage(s){if(s.stage&&STAGES.includes(s.stage))return s.stage;if(num(s.deposit)>=num(s.finalAmount)&&num(s.finalAmount)>0)return "Closed";if(num(s.deposit)>0)return "Deposit";return "New";}
+
+/* ================= DATA LAYER ================= */
+async function api(action,payload){
+  const r=await fetch(WEB_APP_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,payload:payload||{}})});
+  return r.json();
+}
+async function loadData(){
+  const r=await fetch(WEB_APP_URL);const d=await r.json();
   STATE.serverVersion=d.version||null;
-  checkServerVersion();
-  STATE.sales=(d.sales||[]).map(s=>({...s,closed:s.closed===true||s.closed==="TRUE"||s.closed==="true",stage:s.stage||deriveStage(s)}));
+  STATE.sales=(d.sales||[]).map(s=>({...s,plate:normalizePlate(s.plate),stage:deriveStage(s)}));
   STATE.promos=d.promos||[];STATE.promoEvents=d.promoEvents||[];STATE.members=d.members||[];
-  STATE.vehicles=vehiclesFromSales();}
-// Derives one vehicle record per distinct plate directly from Sales rows —
-// no separate sheet/save step required. Uses the most recent sale for
-// each plate to fill in owner name, phone, and vehicle class.
+  STATE.vehicles=vehiclesFromSales();
+  checkServerVersion();
+}
+// Vehicles derived entirely from Sales rows — most recent sale wins for details.
 function vehiclesFromSales(){
   const map={};
   [...STATE.sales].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)).forEach(s=>{
     const p=normalizePlate(s.plate);if(!p)return;
-    if(!map[p])map[p]={plate:p,ownerName:"",phone:"",vehicleClass:""};
-    if(s.clientName)map[p].ownerName=s.clientName;
+    if(!map[p])map[p]={plate:p,model:"",clientName:"",phone:"",vehicleClass:""};
+    if(s.model)map[p].model=s.model;
+    if(s.clientName)map[p].clientName=s.clientName;
     if(s.phone)map[p].phone=s.phone;
     if(s.vehicleClass!==undefined&&s.vehicleClass!==null&&s.vehicleClass!=="")map[p].vehicleClass=s.vehicleClass;
   });
@@ -226,148 +332,487 @@ function vehiclesFromSales(){
 }
 function findVehicle(plate){const p=normalizePlate(plate);if(!p)return null;return STATE.vehicles.find(v=>normalizePlate(v.plate)===p)||null;}
 function vehicleSales(plate){const p=normalizePlate(plate);return STATE.sales.filter(s=>normalizePlate(s.plate)===p);}
-function deriveStage(s){if(s.closed===true||s.closed==="TRUE"||s.closed==="true")return"Closed";if(Number(s.deposit||0)>0)return"Deposit";return"New";}
-function promoByCode(c){return STATE.promos.find(p=>String(p.code).toUpperCase()===String(c).toUpperCase());}
-function promoStats(code){const sales=STATE.sales.filter(s=>s.promoCode&&String(s.promoCode).toUpperCase()===String(code).toUpperCase());const events=STATE.promoEvents.filter(e=>String(e.code).toUpperCase()===String(code).toUpperCase());const closed=sales.filter(s=>s.stage==="Closed");return{siteUses:events.length,bookings:sales.length,closed:closed.length,commission:closed.reduce((a,s)=>a+Number(s.finalAmount||0)*COMMISSION_RATE,0),revenue:closed.reduce((a,s)=>a+Number(s.finalAmount||0),0)};}
+function promoByCode(code){if(!code)return null;return STATE.promos.find(p=>String(p.code).toUpperCase()===String(code).trim().toUpperCase())||null;}
+function memberForPlate(plate){const p=normalizePlate(plate);return STATE.members.find(m=>normalizePlate(m.plate)===p)||null;}
 
-function buildKeypad(){const kp=document.getElementById("keypad");const keys=["1","2","3","4","5","6","7","8","9","del","0","ok"];kp.innerHTML=keys.map(k=>k==="del"?'<button class="key" data-k="del">&#9003;</button>':k==="ok"?'<button class="key" data-k="ok">&#10003;</button>':`<button class="key" data-k="${k}">${k}</button>`).join("");kp.querySelectorAll(".key").forEach(b=>b.addEventListener("click",()=>pressKey(b.dataset.k)));renderPinDots();}
-function renderPinDots(){document.getElementById("pinDisplay").innerHTML=Array.from({length:Math.max(4,pinBuffer.length)}).map((_,i)=>`<div class="pin-dot ${i<pinBuffer.length?'filled':''}"></div>`).join("");}
-function pressKey(k){document.getElementById("gateErr").textContent="";if(k==="del"){pinBuffer=pinBuffer.slice(0,-1);renderPinDots();return;}if(k==="ok"){submitPin();return;}if(pinBuffer.length<8){pinBuffer+=k;renderPinDots();}}
-async function submitPin(){if(!pinBuffer)return;document.getElementById("gateErr").textContent="Checking...";try{const res=await api("checkPin",{pin:pinBuffer});if(res.role){ROLE=res.role;sessionStorage.setItem("gs_role",ROLE);pinBuffer="";enterApp();}else{document.getElementById("gateErr").textContent="Wrong PIN";pinBuffer="";renderPinDots();}}catch(e){document.getElementById("gateErr").textContent="Connection error - try again";}}
-function logout(){sessionStorage.removeItem("gs_role");ROLE=null;pinBuffer="";document.getElementById("mainApp").style.display="none";document.getElementById("gate").style.display="flex";renderPinDots();}
-
-function buildTabs(){const all=[{id:"dashboard",label:"Dashboard",owner:true},{id:"log",label:"Log Sale",owner:false},{id:"pipeline",label:"Pipeline",owner:false},{id:"vehicles",label:"Vehicles",owner:false},{id:"promos",label:"Promo Codes",owner:false},{id:"members",label:"Membership",owner:false},{id:"reports",label:"Reports",owner:true}];const visible=all.filter(t=>ROLE==="owner"?true:!t.owner);const tabsEl=document.getElementById("tabs");tabsEl.innerHTML=visible.map((t,i)=>`<button class="tab ${i===0?'active':''}" data-tab="${t.id}">${t.label}</button>`).join("");tabsEl.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{tabsEl.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));btn.classList.add("active");document.getElementById("panel-"+btn.dataset.tab).classList.add("active");}));document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));document.getElementById("panel-"+visible[0].id).classList.add("active");}
-async function enterApp(){document.getElementById("gate").style.display="none";document.getElementById("mainApp").style.display="block";document.getElementById("roleChip").textContent=(ROLE==="owner"?"Owner":"Staff")+" - Lock";buildTabs();await loadData();renderAll();}
-function checkServerVersion(){const b=document.getElementById("versionBanner");if(!b)return;if(!STATE.serverVersion){b.style.display="block";b.innerHTML="⚠️ Can't confirm backend version — the app may be talking to an old Code.gs. If actions like Close keep failing, re-deploy Code.gs as a NEW version.";return;}if(STATE.serverVersion!==EXPECTED_SCRIPT_VERSION){b.style.display="block";b.innerHTML="⚠️ Backend is OUT OF DATE (running \""+esc(STATE.serverVersion)+"\", app expects \""+esc(EXPECTED_SCRIPT_VERSION)+"\"). Paste the latest Code.gs into the Apps Script project bound to THIS sheet, then Deploy → Manage deployments → edit → Version: New version → Deploy.";return;}b.style.display="none";}
-
-function computeStats(){const closed=STATE.sales.filter(s=>s.stage==="Closed");const totalRevenue=closed.reduce((a,s)=>a+Number(s.finalAmount||0),0);const totalDeposits=STATE.sales.reduce((a,s)=>a+Number(s.deposit||0),0);const balanceOutstanding=STATE.sales.reduce((a,s)=>a+Math.max(0,Number(s.finalAmount||0)-Number(s.deposit||0)),0);const mpesa=STATE.sales.filter(s=>s.paymentMethod==="M-Pesa").reduce((a,s)=>a+Number(s.deposit||0),0);const cash=STATE.sales.filter(s=>s.paymentMethod==="Cash").reduce((a,s)=>a+Number(s.deposit||0),0);const commissionOwed=closed.filter(s=>s.promoCode).reduce((a,s)=>a+Number(s.finalAmount||0)*COMMISSION_RATE,0);const influencerEngagements=STATE.sales.filter(s=>{const p=promoByCode(s.promoCode);return p&&p.category==="Influencer";}).length;return{closedCount:closed.length,openCount:STATE.sales.length-closed.length,totalRevenue,totalDeposits,balanceOutstanding,mpesa,cash,commissionOwed,influencerEngagements};}
-function renderDashboard(){const el=document.getElementById("panel-dashboard");if(ROLE!=="owner"){el.innerHTML="";return;}const s=computeStats();el.innerHTML=`<div style="font-size:11px;color:#8a8a8a;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.4px;">Owner view - full visibility</div><div class="cards"><div class="card"><div class="label">Revenue (closed)</div><div class="value">${money(s.totalRevenue)}</div><div class="sub">${s.closedCount} closed &middot; ${s.openCount} open</div></div><div class="card"><div class="label">Deposits in</div><div class="value">${money(s.totalDeposits)}</div><div class="sub">M-Pesa ${money(s.mpesa)} &middot; Cash ${money(s.cash)}</div></div><div class="card"><div class="label">Balance owed to you</div><div class="value">${money(s.balanceOutstanding)}</div></div><div class="card"><div class="label">Commission owed</div><div class="value">${money(s.commissionOwed)}</div><div class="sub">${STATE.promos.length} codes &middot; ${s.influencerEngagements} influencer jobs</div></div></div><div class="section-title">This month</div>${renderMiniMonth()}<div class="section-title">Top partners</div>${renderPartnerRanking(3)}`;}
-function renderMiniMonth(){const now=new Date();const ym=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");const ms=STATE.sales.filter(s=>String(s.timestamp).slice(0,7)===ym);const cl=ms.filter(s=>s.stage==="Closed");const rev=cl.reduce((a,s)=>a+Number(s.finalAmount||0),0);return `<div class="item"><div class="stat-row"><span>Bookings <strong>${ms.length}</strong></span><span>Closed <strong>${cl.length}</strong></span><span>Revenue <strong style="color:var(--lime);">${money(rev)}</strong></span></div></div>`;}
-
-function renderLog(){const el=document.getElementById("panel-log");el.innerHTML=`<div class="form-wrap"><div style="font-size:11px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:12px;">Log a WhatsApp, website or walk-in booking</div><label>Plate number<input id="f_plate" placeholder="e.g. KDS 112Z" style="text-transform:uppercase;"></label><div id="f_plateHint"></div><label>Client name<input id="f_clientName"></label><label>Phone number<input id="f_phone" placeholder="07XX XXX XXX"></label><label>Booking channel<select id="f_channel">${CHANNELS.map(c=>`<option>${c}</option>`).join("")}</select></label><label>Vehicle class</label><div class="method-row"><button type="button" class="method-btn ${logForm.vehicleClass==0?'active':''}" id="vc_sedan">Saloon / Sedan</button><button type="button" class="method-btn ${logForm.vehicleClass==1?'active':''}" id="vc_suv">SUV / Crossover</button></div><div style="font-size:11px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.4px;margin:16px 0 8px;">Add services — pick as many as this job needs</div><label>Service category<select id="f_svcGroup">${SERVICE_GROUPS.map(g=>`<option value="${g.id}" ${g.id===logForm.svcGroup?'selected':''}>${g.label}</option>`).join("")}</select></label><label>Service<select id="f_svcItem"></select></label><div id="f_svcFilmWrap"></div><div id="f_svcPreview"></div><button type="button" class="btn-outline" id="f_addSvc" style="width:100%;margin-bottom:6px;">+ Add service</button><div id="f_cartList"></div><div class="item" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12.5px;color:#9a9a9a;">Total service amount</span><strong id="f_cartTotal" style="color:var(--lime);font-size:16px;font-family:'Space Grotesk';">KSh 0</strong></div><label style="margin-top:12px;">Service description (auto-filled from services added — edit if needed)<input id="f_serviceNote" placeholder="e.g. Full PPF - Nissan Note"></label><label>Promo code (optional)<input id="f_promoCode" placeholder="e.g. NAIROBICLUB"></label><div id="f_promoHint"></div><label>Deposit received (KSh)<input id="f_deposit" type="number" inputmode="numeric"></label><div id="f_balanceHint" style="font-size:12px;color:#9a9a9a;margin-bottom:12px;"></div><label>Payment method</label><div class="method-row"><button type="button" class="method-btn active" id="m_mpesa">M-Pesa</button><button type="button" class="method-btn" id="m_cash">Cash</button></div><div id="f_paymentField"></div><label>Logged by (staff name, optional)<input id="f_loggedBy"></label><button type="button" class="toggle" id="f_closedToggle">&#9675; Mark as closed sale (job confirmed, not just deposit)</button><button type="button" class="btn" id="f_submit">Save reservation</button><div id="f_note" style="font-size:11.5px;color:#7a7a7a;margin-top:8px;"></div></div>`;
-  renderPaymentField();renderSvcItemOptions();renderSvcFilmField();updateSvcPreview();renderCartUI();updatePromoHint();updateBalanceHint();
-  document.getElementById("f_plate").addEventListener("input",onPlateInput);
-  document.getElementById("f_plate").addEventListener("blur",onPlateBlur);
-  document.getElementById("f_promoCode").addEventListener("input",()=>{updatePromoHint();updateBalanceHint();});
-  document.getElementById("f_serviceNote").addEventListener("input",()=>{logForm.noteEdited=true;});
-  document.getElementById("f_deposit").addEventListener("input",updateBalanceHint);
-  document.getElementById("vc_sedan").addEventListener("click",()=>{logForm.vehicleClass=0;document.getElementById("vc_sedan").classList.add("active");document.getElementById("vc_suv").classList.remove("active");updateSvcPreview();renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();});
-  document.getElementById("vc_suv").addEventListener("click",()=>{logForm.vehicleClass=1;document.getElementById("vc_suv").classList.add("active");document.getElementById("vc_sedan").classList.remove("active");updateSvcPreview();renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();});
-  document.getElementById("f_svcGroup").addEventListener("change",e=>{logForm.svcGroup=e.target.value;logForm.svcItem="";renderSvcItemOptions();renderSvcFilmField();updateSvcPreview();});
-  document.getElementById("f_svcItem").addEventListener("change",e=>{logForm.svcItem=e.target.value;updateSvcPreview();});
-  document.getElementById("f_addSvc").addEventListener("click",addToCart);
-  document.getElementById("m_mpesa").addEventListener("click",()=>{logForm.paymentMethod="M-Pesa";renderPaymentField();});
-  document.getElementById("m_cash").addEventListener("click",()=>{logForm.paymentMethod="Cash";renderPaymentField();});
-  document.getElementById("f_closedToggle").addEventListener("click",()=>{logForm.closed=!logForm.closed;const b=document.getElementById("f_closedToggle");b.classList.toggle("on",logForm.closed);b.innerHTML=(logForm.closed?"&#9679; ":"&#9675; ")+"Mark as closed sale (job confirmed, not just deposit)";});
-  document.getElementById("f_submit").addEventListener("click",submitSale);
+function checkServerVersion(){
+  const b=document.getElementById("versionBanner");if(!b)return;
+  if(!STATE.serverVersion){b.style.display="block";b.textContent="⚠️ Can't confirm backend version. If actions fail, re-deploy Code.gs as a new version.";return;}
+  if(STATE.serverVersion!==EXPECTED_SCRIPT_VERSION){b.style.display="block";b.innerHTML="⚠️ Backend is OUT OF DATE (running \""+esc(STATE.serverVersion)+"\", app expects \""+esc(EXPECTED_SCRIPT_VERSION)+"\"). Paste the latest Code.gs into the Apps Script bound to THIS sheet, then Deploy → New deployment (or Manage → edit → New version).";return;}
+  b.style.display="none";
 }
-function onPlateInput(e){e.target.value=e.target.value.toUpperCase();}
-function onPlateBlur(){const raw=document.getElementById("f_plate").value;const plate=normalizePlate(raw);const hint=document.getElementById("f_plateHint");if(!plate){hint.innerHTML="";return;}document.getElementById("f_plate").value=formatPlate(plate);const v=findVehicle(plate);if(!v){hint.innerHTML=`<div style="font-size:11.5px;color:#7a7a7a;margin:-6px 0 12px;">New plate — a vehicle record will be created automatically when you save.</div>`;return;}const sales=vehicleSales(plate);hint.innerHTML=`<div style="font-size:11.5px;color:var(--lime);margin:-6px 0 12px;">Known vehicle — ${sales.length} previous visit${sales.length===1?"":"s"}${v.ownerName?" · "+esc(v.ownerName):""}</div>`;const nameF=document.getElementById("f_clientName");const phoneF=document.getElementById("f_phone");if(!nameF.value.trim()&&v.ownerName)nameF.value=v.ownerName;if(!phoneF.value.trim()&&v.phone)phoneF.value=v.phone;if(v.vehicleClass!==""&&v.vehicleClass!==undefined&&v.vehicleClass!==null){logForm.vehicleClass=Number(v.vehicleClass)||0;document.getElementById("vc_sedan").classList.toggle("active",logForm.vehicleClass==0);document.getElementById("vc_suv").classList.toggle("active",logForm.vehicleClass==1);updateSvcPreview();renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();}}
-function renderSvcItemOptions(){const g=SERVICE_GROUPS.find(g=>g.id===logForm.svcGroup);const sel=document.getElementById("f_svcItem");if(!g){sel.innerHTML="";return;}
+
+/* ================= GATE / KEYPAD ================= */
+function buildKeypad(){
+  const kp=document.getElementById("keypad");
+  ["1","2","3","4","5","6","7","8","9","","0","⌫"].forEach(k=>{
+    if(k===""){kp.appendChild(document.createElement("div"));return;}
+    const b=document.createElement("button");b.className="key";b.textContent=k;
+    b.onclick=()=>keyPress(k);kp.appendChild(b);
+  });
+  renderPinDots();
+}
+function renderPinDots(){
+  const d=document.getElementById("pinDisplay");d.innerHTML="";
+  for(let i=0;i<4;i++){const dot=document.createElement("div");dot.className="pin-dot"+(i<pinBuffer.length?" filled":"");d.appendChild(dot);}
+}
+async function keyPress(k){
+  if(k==="⌫"){pinBuffer=pinBuffer.slice(0,-1);renderPinDots();return;}
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=k;renderPinDots();
+  if(pinBuffer.length===4){
+    const pin=pinBuffer;
+    try{const res=await api("checkPin",{pin});
+      if(res.role){ROLE=res.role;sessionStorage.setItem("gs_role",ROLE);enterApp();}
+      else{document.getElementById("gateErr").textContent="Wrong PIN";pinBuffer="";renderPinDots();}
+    }catch(e){document.getElementById("gateErr").textContent="Connection error";pinBuffer="";renderPinDots();}
+  }
+}
+function logout(){sessionStorage.removeItem("gs_role");location.reload();}
+
+async function enterApp(){
+  document.getElementById("gate").style.display="none";
+  document.getElementById("mainApp").style.display="block";
+  document.getElementById("roleChip").textContent=(ROLE==="owner"?"Owner":"Staff")+" · Lock";
+  const bt2=document.getElementById("buildTagApp");if(bt2)bt2.textContent=EXPECTED_SCRIPT_VERSION;
+  buildTabs();await loadData();renderAll();
+}
+
+/* ================= TABS ================= */
+function buildTabs(){
+  const all=[{id:"dashboard",label:"Dashboard",owner:true},{id:"log",label:"Log Sale"},{id:"pipeline",label:"Pipeline"},{id:"vehicles",label:"Vehicles"},{id:"promos",label:"Promo Codes"},{id:"members",label:"Membership"},{id:"reports",label:"Reports",owner:true}];
+  const tabs=document.getElementById("tabs");tabs.innerHTML="";
+  all.filter(t=>!t.owner||ROLE==="owner").forEach((t,i)=>{
+    const b=document.createElement("button");b.className="tab"+(i===0?" active":"");b.textContent=t.label;b.dataset.tab=t.id;
+    b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));document.getElementById("panel-"+t.id).classList.add("active");};
+    tabs.appendChild(b);
+  });
+  document.getElementById("panel-"+all.filter(t=>!t.owner||ROLE==="owner")[0].id).classList.add("active");
+}
+function renderAll(){[renderDashboard,renderLog,renderPipeline,renderVehicles,renderPromos,renderMembers,renderReports].forEach(fn=>{try{fn();}catch(e){console.error("render "+fn.name,e);}});}
+
+function showToast(m,e){const t=document.getElementById("toast");t.textContent=m;t.className="toast"+(e?" err":"");t.style.display="block";setTimeout(()=>t.style.display="none",e?6000:2400);}
+
+/* ================= DASHBOARD ================= */
+function renderDashboard(){
+  const el=document.getElementById("panel-dashboard");if(!el)return;
+  const sales=STATE.sales;
+  const closed=sales.filter(s=>s.stage==="Closed");
+  const revenue=closed.reduce((a,s)=>a+num(s.finalAmount),0);
+  const collected=sales.reduce((a,s)=>a+num(s.deposit),0);
+  const outstanding=sales.reduce((a,s)=>a+saleBalance(s),0);
+  const openJobs=sales.filter(s=>s.stage!=="Closed").length;
+  el.innerHTML=`<div class="cards">
+    <div class="card"><div class="label">Closed revenue</div><div class="value" style="color:var(--lime);">${money(revenue)}</div><div class="sub">${closed.length} closed job${closed.length===1?"":"s"}</div></div>
+    <div class="card"><div class="label">Total collected</div><div class="value">${money(collected)}</div><div class="sub">deposits + full payments</div></div>
+    <div class="card"><div class="label">Outstanding</div><div class="value" style="color:${outstanding>0?'var(--warn)':'var(--lime)'};">${money(outstanding)}</div><div class="sub">${openJobs} open job${openJobs===1?"":"s"}</div></div>
+    <div class="card"><div class="label">Vehicles on file</div><div class="value">${STATE.vehicles.length}</div><div class="sub">${STATE.members.length} member${STATE.members.length===1?"":"s"}</div></div>
+  </div>
+  <div class="section-title">Payment mix (all money received)</div>${paymentMixHTML()}`;
+}
+function paymentMixHTML(){
+  let cash=0,mpesa=0;
+  STATE.sales.forEach(s=>{const dep=num(s.deposit);if(dep<=0)return;if(String(s.paymentMethod)==="Cash")cash+=dep;else mpesa+=dep;});
+  const total=cash+mpesa;
+  const pct=v=>total>0?Math.round(v/total*100):0;
+  return `<div class="money-split">
+    <div class="card"><div class="label">M-Pesa</div><div class="value">${money(mpesa)}</div><div class="sub">${pct(mpesa)}% of collections</div></div>
+    <div class="card"><div class="label">Cash</div><div class="value">${money(cash)}</div><div class="sub">${pct(cash)}% of collections</div></div>
+  </div>`;
+}
+
+/* ================= LOG SALE (vehicle-first) ================= */
+function renderLog(){
+  const el=document.getElementById("panel-log");if(!el)return;
+  const f=logForm;
+  el.innerHTML=`<div class="form-wrap">
+    <div style="font-size:11px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:12px;">Vehicle details</div>
+    <label>Number plate<input id="f_plate" placeholder="e.g. KDS 112Z" style="text-transform:uppercase;" value="${esc(f.plate)}"></label>
+    <div id="f_plateHint"></div>
+    <label>Make<select id="f_make"></select></label>
+    <label>Model<select id="f_model"></select></label>
+    <div id="f_classHint" style="font-size:11.5px;color:var(--lime);margin:-4px 0 12px;"></div>
+    <label>Owner name<input id="f_clientName" value="${esc(f.clientName)}"></label>
+    <label>Phone number<input id="f_phone" placeholder="07XX XXX XXX" value="${esc(f.phone)}"></label>
+    <label>Booking channel<select id="f_channel">${CHANNELS.map(c=>`<option ${c===f.channel?'selected':''}>${c}</option>`).join("")}</select></label>
+
+    <div style="font-size:11px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.4px;margin:18px 0 8px;">Services — add as many as needed</div>
+    <label>Category<select id="f_svcGroup">${SERVICE_GROUPS.map(g=>`<option value="${g.id}" ${g.id===f.svcGroup?'selected':''}>${g.label}</option>`).join("")}</select></label>
+    <label>Service<select id="f_svcItem"></select></label>
+    <div id="f_svcFilmWrap"></div>
+    <div id="f_svcPreview"></div>
+    <button type="button" class="btn-outline" id="f_addSvc" style="width:100%;margin-bottom:6px;">+ Add service</button>
+    <div id="f_cartList"></div>
+    <div class="item" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;"><span style="font-size:12.5px;color:#9a9a9a;">Total service amount</span><strong id="f_cartTotal" style="color:var(--lime);font-size:16px;font-family:'Space Grotesk';">KSh 0</strong></div>
+    <label style="margin-top:12px;">Service description (auto-filled — edit if custom)<input id="f_serviceNote" placeholder="e.g. Full PPF + tint"></label>
+
+    <div style="font-size:11px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.4px;margin:18px 0 8px;">Payment</div>
+    <label>Promo code (optional)<input id="f_promoCode" placeholder="e.g. NAIROBICLUB"></label>
+    <div id="f_promoHint"></div>
+    <label>Deposit received (KSh)<input id="f_deposit" type="number" inputmode="numeric"></label>
+    <div id="f_balanceHint" style="font-size:12px;color:#9a9a9a;margin-bottom:12px;"></div>
+    <label>Payment method</label>
+    <div class="method-row"><button type="button" class="method-btn ${f.paymentMethod==='M-Pesa'?'active':''}" id="m_mpesa">M-Pesa</button><button type="button" class="method-btn ${f.paymentMethod==='Cash'?'active':''}" id="m_cash">Cash</button></div>
+    <div id="f_paymentField"></div>
+    <label>Logged by (staff name, optional)<input id="f_loggedBy"></label>
+    <button type="button" class="toggle ${f.closed?'on':''}" id="f_closedToggle">${f.closed?'&#9679;':'&#9675;'} Mark as closed (job done, balance cleared)</button>
+    <button type="button" class="btn" id="f_submit">Save reservation</button>
+    <div id="f_note" style="font-size:11.5px;color:#7a7a7a;margin-top:8px;"></div>
+  </div>`;
+  loadMakesInto("f_make",f.make);renderModelOptions();renderSvcItemOptions();renderSvcFilmField();updateSvcPreview();renderCartUI();renderPaymentField();updatePromoHint();updateBalanceHint();updateClassHint();
+  const g=id=>document.getElementById(id);
+  g("f_plate").addEventListener("input",e=>{e.target.value=e.target.value.toUpperCase();f.plate=e.target.value;});
+  g("f_plate").addEventListener("blur",onPlateBlur);
+  g("f_make").addEventListener("change",e=>{f.make=e.target.value;f.model="";renderModelOptions();updateClassHint();});
+  g("f_model").addEventListener("change",e=>{f.model=e.target.value;applyClassFromVehicle();updateClassHint();updateSvcPreview();renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();});
+  g("f_clientName").addEventListener("input",e=>f.clientName=e.target.value);
+  g("f_phone").addEventListener("input",e=>f.phone=e.target.value);
+  g("f_channel").addEventListener("change",e=>f.channel=e.target.value);
+  g("f_svcGroup").addEventListener("change",e=>{f.svcGroup=e.target.value;f.svcItem="";renderSvcItemOptions();renderSvcFilmField();updateSvcPreview();});
+  g("f_svcItem").addEventListener("change",e=>{f.svcItem=e.target.value;updateSvcPreview();});
+  g("f_addSvc").addEventListener("click",addToCart);
+  g("f_serviceNote").addEventListener("input",()=>f.noteEdited=true);
+  g("f_promoCode").addEventListener("input",()=>{updatePromoHint();updateBalanceHint();});
+  g("f_deposit").addEventListener("input",updateBalanceHint);
+  g("m_mpesa").addEventListener("click",()=>{f.paymentMethod="M-Pesa";renderPaymentField();document.getElementById("m_mpesa").classList.add("active");document.getElementById("m_cash").classList.remove("active");});
+  g("m_cash").addEventListener("click",()=>{f.paymentMethod="Cash";renderPaymentField();document.getElementById("m_cash").classList.add("active");document.getElementById("m_mpesa").classList.remove("active");});
+  g("f_closedToggle").addEventListener("click",()=>{f.closed=!f.closed;const b=g("f_closedToggle");b.classList.toggle("on",f.closed);b.innerHTML=(f.closed?"&#9679; ":"&#9675; ")+"Mark as closed (job done, balance cleared)";});
+  g("f_submit").addEventListener("click",submitSale);
+}
+
+function loadMakesInto(selId,current){
+  const sel=document.getElementById(selId);if(!sel)return;
+  const all=Object.keys(VEHICLES).sort();
+  const popular=['Toyota','Nissan','Mazda','Subaru','Honda','Mitsubishi','Volkswagen','Mercedes-Benz','BMW','Land Rover','Lexus','Audi'].filter(m=>all.includes(m));
+  const rest=all.filter(m=>!popular.includes(m));
+  sel.innerHTML='<option value="">— Select make —</option>'+popular.map(m=>`<option value="${m}">${m}</option>`).join("")+'<option disabled>──────</option>'+rest.map(m=>`<option value="${m}">${m}</option>`).join("");
+  if(current)sel.value=current;
+}
+function renderModelOptions(){
+  const sel=document.getElementById("f_model");if(!sel)return;
+  const entry=VEHICLES[logForm.make];
+  if(!entry){sel.innerHTML='<option value="">— Select make first —</option>';return;}
+  sel.innerHTML='<option value="">— Select model —</option>'+entry.models.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  if(logForm.model)sel.value=logForm.model;
+}
+function applyClassFromVehicle(){
+  if(logForm.make&&logForm.model){const r=detectClass(logForm.make,logForm.model);logForm.vehicleClass=r.v;}
+}
+function updateClassHint(){
+  const el=document.getElementById("f_classHint");if(!el)return;
+  if(logForm.make&&logForm.model){const r=detectClass(logForm.make,logForm.model);el.textContent=r.label;}
+  else el.textContent="";
+}
+function onPlateBlur(){
+  const raw=document.getElementById("f_plate").value;const plate=normalizePlate(raw);const hint=document.getElementById("f_plateHint");
+  if(!plate){hint.innerHTML="";return;}
+  document.getElementById("f_plate").value=formatPlate(plate);logForm.plate=plate;
+  const v=findVehicle(plate);
+  if(!v){hint.innerHTML=`<div style="font-size:11.5px;color:#7a7a7a;margin:-6px 0 12px;">New plate — will be saved as a new vehicle.</div>`;return;}
+  const sales=vehicleSales(plate);
+  hint.innerHTML=`<div style="font-size:11.5px;color:var(--lime);margin:-6px 0 12px;">Known vehicle — ${sales.length} previous visit${sales.length===1?"":"s"}. Details auto-filled.</div>`;
+  // auto-fill everything we know
+  if(v.clientName){logForm.clientName=v.clientName;document.getElementById("f_clientName").value=v.clientName;}
+  if(v.phone){logForm.phone=v.phone;document.getElementById("f_phone").value=v.phone;}
+  if(v.model){
+    // find the make that owns this model
+    let foundMake="";
+    for(const mk in VEHICLES){if(VEHICLES[mk].models.includes(v.model)){foundMake=mk;break;}}
+    if(foundMake){logForm.make=foundMake;loadMakesInto("f_make",foundMake);}
+    logForm.model=v.model;renderModelOptions();
+  }
+  if(v.vehicleClass!==""&&v.vehicleClass!=null){logForm.vehicleClass=Number(v.vehicleClass)||0;}
+  updateClassHint();updateSvcPreview();renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();
+}
+
+/* ---- service cart ---- */
+function renderSvcItemOptions(){
+  const g=SERVICE_GROUPS.find(g=>g.id===logForm.svcGroup);const sel=document.getElementById("f_svcItem");if(!sel||!g){if(sel)sel.innerHTML="";return;}
   if(g.id==="problem"){const groups={};g.items.forEach(i=>{(groups[i.group]=groups[i.group]||[]).push(i);});sel.innerHTML='<option value="">— Select —</option>'+Object.keys(groups).map(gr=>`<optgroup label="${gr}">${groups[gr].map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("")}</optgroup>`).join("");}
-  else{sel.innerHTML='<option value="">— Select —</option>'+g.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");}
+  else sel.innerHTML='<option value="">— Select —</option>'+g.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");
   if(logForm.svcItem)sel.value=logForm.svcItem;
 }
-function renderSvcFilmField(){const wrap=document.getElementById("f_svcFilmWrap");const needsFilm=logForm.svcGroup==="ppf"||logForm.svcGroup==="tint";if(!needsFilm){wrap.innerHTML="";logForm.svcFilm="";return;}const opts=logForm.svcGroup==="ppf"?PPF_FILM:TINT_FILM;if(!logForm.svcFilm)logForm.svcFilm=opts[0].id;wrap.innerHTML=`<label>Film<select id="f_svcFilm">${opts.map(f=>`<option value="${f.id}" ${f.id===logForm.svcFilm?'selected':''}>${esc(f.name)}</option>`).join("")}</select></label>`;document.getElementById("f_svcFilm").addEventListener("change",e=>{logForm.svcFilm=e.target.value;updateSvcPreview();});}
-function computeServicePrice(){const g=SERVICE_GROUPS.find(g=>g.id===logForm.svcGroup);if(!g||!logForm.svcItem)return null;const item=g.items.find(i=>i.id===logForm.svcItem);if(!item)return null;const vc=logForm.vehicleClass;
-  if(g.id==="ppf"||g.id==="tint"){const film=logForm.svcFilm;if(!film||!item.price[film])return null;const filmOpts=g.id==="ppf"?PPF_FILM:TINT_FILM;const filmName=(filmOpts.find(f=>f.id===film)||{}).name||"";return{price:item.price[film][vc],label:item.name+" — "+filmName};}
-  if(g.id==="problem")return{price:item.price[vc],label:item.fix};
+function renderSvcFilmField(){
+  const wrap=document.getElementById("f_svcFilmWrap");if(!wrap)return;
+  const needs=logForm.svcGroup==="ppf"||logForm.svcGroup==="tint";
+  if(!needs){wrap.innerHTML="";logForm.svcFilm="";return;}
+  const opts=logForm.svcGroup==="ppf"?PPF_FILM:TINT_FILM;
+  if(!logForm.svcFilm)logForm.svcFilm=opts[0].id;
+  wrap.innerHTML=`<label>Film / tier<select id="f_svcFilm">${opts.map(o=>`<option value="${o.id}" ${o.id===logForm.svcFilm?'selected':''}>${esc(o.name)}</option>`).join("")}</select></label>`;
+  document.getElementById("f_svcFilm").addEventListener("change",e=>{logForm.svcFilm=e.target.value;updateSvcPreview();});
+}
+function priceFor(groupId,itemId,filmId,vc){
+  const g=SERVICE_GROUPS.find(g=>g.id===groupId);if(!g)return null;
+  const item=g.items.find(i=>i.id===itemId);if(!item)return null;
+  if(groupId==="ppf"||groupId==="tint"){if(!filmId||!item.price[filmId])return null;const fo=groupId==="ppf"?PPF_FILM:TINT_FILM;const fn=(fo.find(f=>f.id===filmId)||{}).name||"";return{price:item.price[filmId][vc],label:item.name+" — "+fn};}
+  if(groupId==="problem")return{price:item.price[vc],label:item.fix};
   return{price:item.price[vc],label:item.name};
 }
-function updateSvcPreview(){const el=document.getElementById("f_svcPreview");const r=computeServicePrice();if(!r){el.innerHTML="";return;}el.innerHTML=`<div class="promo-hint">${esc(r.label)} · ${logForm.vehicleClass==1?"SUV":"Saloon"} pricing · <strong>${money(r.price)}</strong></div>`;}
-function cartEntryInfo(entry){const g=SERVICE_GROUPS.find(g=>g.id===entry.groupId);if(!g)return null;const item=g.items.find(i=>i.id===entry.itemId);if(!item)return null;const vc=logForm.vehicleClass;
-  if(entry.groupId==="ppf"||entry.groupId==="tint"){const film=entry.filmId;if(!film||!item.price[film])return null;const filmOpts=entry.groupId==="ppf"?PPF_FILM:TINT_FILM;const filmName=(filmOpts.find(f=>f.id===film)||{}).name||"";return{label:item.name+" — "+filmName,price:item.price[film][vc]};}
-  if(entry.groupId==="problem")return{label:item.fix,price:item.price[vc]};
-  return{label:item.name,price:item.price[vc]};
+function updateSvcPreview(){
+  const el=document.getElementById("f_svcPreview");if(!el)return;
+  const r=priceFor(logForm.svcGroup,logForm.svcItem,logForm.svcFilm,logForm.vehicleClass);
+  if(!r){el.innerHTML="";return;}
+  el.innerHTML=`<div class="promo-hint">${esc(r.label)} · ${logForm.vehicleClass==1?"SUV":"Saloon"} · <strong>${money(r.price)}</strong></div>`;
 }
-function cartTotal(){return logForm.cart.reduce((sum,e)=>{const info=cartEntryInfo(e);return sum+(info?info.price:0);},0);}
-function cartLabelsJoined(){return logForm.cart.map(e=>{const info=cartEntryInfo(e);return info?info.label:"";}).filter(Boolean).join(" + ");}
-function syncServiceNote(){if(logForm.noteEdited)return;const f=document.getElementById("f_serviceNote");if(f)f.value=cartLabelsJoined();}
-function addToCart(){if(!logForm.svcItem)return;if((logForm.svcGroup==="ppf"||logForm.svcGroup==="tint")&&!logForm.svcFilm)return;logForm.cart.push({groupId:logForm.svcGroup,itemId:logForm.svcItem,filmId:logForm.svcFilm||""});logForm.svcItem="";logForm.svcFilm="";renderSvcItemOptions();renderSvcFilmField();updateSvcPreview();renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();}
-function removeFromCart(idx){logForm.cart.splice(idx,1);renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();}
-function renderCartUI(){const el=document.getElementById("f_cartList");if(!el)return;
-  if(logForm.cart.length===0){el.innerHTML=`<div style="font-size:11.5px;color:#7a7a7a;padding:6px 0;">No services added yet — pick one above and tap "+ Add service".</div>`;}
-  else{el.innerHTML=logForm.cart.map((e,i)=>{const info=cartEntryInfo(e)||{label:"?",price:0};return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--border);font-size:12.5px;"><span>${esc(info.label)}</span><span style="display:flex;align-items:center;gap:10px;"><strong>${money(info.price)}</strong><button type="button" onclick="removeFromCart(${i})" style="background:none;border:none;color:var(--danger);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;">&times;</button></span></div>`;}).join("");}
-  const totalEl=document.getElementById("f_cartTotal");if(totalEl)totalEl.textContent=money(cartTotal());
+function addToCart(){
+  if(!logForm.svcItem)return;
+  if((logForm.svcGroup==="ppf"||logForm.svcGroup==="tint")&&!logForm.svcFilm)return;
+  logForm.cart.push({groupId:logForm.svcGroup,itemId:logForm.svcItem,filmId:logForm.svcFilm||""});
+  logForm.svcItem="";logForm.svcFilm="";
+  renderSvcItemOptions();renderSvcFilmField();updateSvcPreview();renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();
 }
-function renderPaymentField(){document.getElementById("m_mpesa").classList.toggle("active",logForm.paymentMethod==="M-Pesa");document.getElementById("m_cash").classList.toggle("active",logForm.paymentMethod==="Cash");const f=document.getElementById("f_paymentField");if(logForm.paymentMethod==="M-Pesa"){f.innerHTML=`<label>M-Pesa confirmation code<input id="f_mpesaCode" placeholder="e.g. QCH7XXXXX" style="text-transform:uppercase;"></label>`;}else{f.innerHTML=`<button type="button" class="toggle ${logForm.cashConfirmed?'on':''}" id="f_cashToggle">${logForm.cashConfirmed?"&#9679;":"&#9675;"} Cash physically received and counted</button>`;document.getElementById("f_cashToggle").addEventListener("click",()=>{logForm.cashConfirmed=!logForm.cashConfirmed;renderPaymentField();});}}
-function updatePromoHint(){const code=document.getElementById("f_promoCode").value.trim();const hint=document.getElementById("f_promoHint");if(!code){hint.innerHTML="";return;}const m=promoByCode(code);const amt=cartTotal();if(m){const fin=Math.round(amt*(1-DISCOUNT_RATE));hint.innerHTML=`<div class="promo-hint">${esc(m.owner)} &middot; 8% off (-${money(amt-fin)}) &middot; final ${money(fin)} &middot; 10% commission (${money(fin*COMMISSION_RATE)}) on close</div>`;}else{hint.innerHTML=`<div style="font-size:12px;color:var(--warn);margin-bottom:12px;">Code not found - won't be linked to a partner.</div>`;}}
-function updateBalanceHint(){const amt=cartTotal();const dep=Number(document.getElementById("f_deposit").value||0);const m=promoByCode(document.getElementById("f_promoCode").value.trim());const fin=m?Math.round(amt*(1-DISCOUNT_RATE)):amt;document.getElementById("f_balanceHint").innerHTML=(amt&&dep)?`Balance remaining: <strong style="color:#fff;">${money(Math.max(0,fin-dep))}</strong>`:"";}
-async function submitSale(){const g=id=>document.getElementById(id);const clientName=g("f_clientName").value.trim();const plate=normalizePlate(g("f_plate").value);const amount=cartTotal();const deposit=Number(g("f_deposit").value||0);const note=g("f_note");const m=promoByCode(g("f_promoCode").value.trim());const finalAmount=m?Math.round(amount*(1-DISCOUNT_RATE)):amount;const mpesaCode=logForm.paymentMethod==="M-Pesa"?(g("f_mpesaCode")?.value||"").trim().toUpperCase():"";const serviceLabel=g("f_serviceNote").value.trim()||cartLabelsJoined();if(logForm.cart.length===0){note.textContent="Add at least one service.";note.style.color="var(--danger)";return;}if(!clientName||!deposit){note.textContent="Fill in client name and deposit received.";note.style.color="var(--danger)";return;}if(!plate){note.textContent="Enter the plate number.";note.style.color="var(--danger)";return;}if(logForm.paymentMethod==="M-Pesa"&&!mpesaCode){note.textContent="Enter the M-Pesa confirmation code.";note.style.color="var(--danger)";return;}if(logForm.paymentMethod==="Cash"&&!logForm.cashConfirmed){note.textContent="Confirm cash received before saving.";note.style.color="var(--danger)";return;}if(BUSY)return;BUSY=true;const _btn=g("f_submit");_btn.disabled=true;note.textContent="Saving...";note.style.color="#7a7a7a";try{const stage=logForm.closed?"Closed":(deposit>0?"Deposit":"New");await api("addSale",{clientName,phone:g("f_phone").value.trim(),plate,vehicleClass:logForm.vehicleClass,channel:g("f_channel").value,service:serviceLabel,amount,finalAmount,discount:amount-finalAmount,promoCode:m?m.code:"",deposit,paymentMethod:logForm.paymentMethod,mpesaCode,cashConfirmed:logForm.paymentMethod==="Cash"?logForm.cashConfirmed:false,closed:logForm.closed,loggedBy:g("f_loggedBy").value.trim(),stage});logForm={paymentMethod:"M-Pesa",closed:false,cashConfirmed:false,vehicleClass:0,svcGroup:"package",svcItem:"",svcFilm:"",cart:[],noteEdited:false};await loadData();showToast("Sale logged");renderAll();document.querySelector('.tab[data-tab="pipeline"]')?.click();}catch(e){note.textContent="Save failed - check connection and try once more.";note.style.color="var(--danger)";}finally{BUSY=false;const b=document.getElementById("f_submit");if(b)b.disabled=false;}}
+function removeFromCart(i){logForm.cart.splice(i,1);renderCartUI();syncServiceNote();updateBalanceHint();updatePromoHint();}
+function cartInfo(e){return priceFor(e.groupId,e.itemId,e.filmId,logForm.vehicleClass);}
+function cartTotal(){return logForm.cart.reduce((a,e)=>{const i=cartInfo(e);return a+(i?i.price:0);},0);}
+function cartLabels(){return logForm.cart.map(e=>{const i=cartInfo(e);return i?i.label:"";}).filter(Boolean).join(" + ");}
+function syncServiceNote(){if(logForm.noteEdited)return;const f=document.getElementById("f_serviceNote");if(f)f.value=cartLabels();}
+function renderCartUI(){
+  const el=document.getElementById("f_cartList");if(!el)return;
+  if(logForm.cart.length===0)el.innerHTML=`<div style="font-size:11.5px;color:#7a7a7a;padding:6px 0;">No services added yet.</div>`;
+  else el.innerHTML=logForm.cart.map((e,i)=>{const info=cartInfo(e)||{label:"?",price:0};return `<div class="cart-line"><span>${esc(info.label)}</span><span style="display:flex;align-items:center;gap:10px;"><strong>${money(info.price)}</strong><button type="button" class="cart-x" onclick="removeFromCart(${i})">&times;</button></span></div>`;}).join("");
+  const t=document.getElementById("f_cartTotal");if(t)t.textContent=money(cartTotal());
+}
+function renderPaymentField(){
+  const f=document.getElementById("f_paymentField");if(!f)return;
+  if(logForm.paymentMethod==="M-Pesa")f.innerHTML=`<label>M-Pesa confirmation code<input id="f_mpesaCode" placeholder="e.g. QCH7XXXXX" style="text-transform:uppercase;"></label>`;
+  else{f.innerHTML=`<button type="button" class="toggle ${logForm.cashConfirmed?'on':''}" id="f_cashToggle">${logForm.cashConfirmed?'&#9679;':'&#9675;'} Cash physically received & counted</button>`;document.getElementById("f_cashToggle").addEventListener("click",()=>{logForm.cashConfirmed=!logForm.cashConfirmed;renderPaymentField();});}
+}
+function updatePromoHint(){
+  const code=document.getElementById("f_promoCode").value.trim();const hint=document.getElementById("f_promoHint");if(!hint)return;
+  if(!code){hint.innerHTML="";return;}
+  const m=promoByCode(code);const amt=cartTotal();
+  if(m){const fin=Math.round(amt*(1-DISCOUNT_RATE));hint.innerHTML=`<div class="promo-hint">${esc(m.owner)} · 8% off (−${money(amt-fin)}) · final ${money(fin)}</div>`;}
+  else hint.innerHTML=`<div style="font-size:12px;color:var(--warn);margin-bottom:12px;">Code not found — won't be linked to a partner.</div>`;
+}
+function updateBalanceHint(){
+  const amt=cartTotal();const dep=num(document.getElementById("f_deposit").value);const m=promoByCode(document.getElementById("f_promoCode").value.trim());const fin=m?Math.round(amt*(1-DISCOUNT_RATE)):amt;
+  const el=document.getElementById("f_balanceHint");if(el)el.innerHTML=(amt&&dep)?`Balance remaining: <strong style="color:#fff;">${money(Math.max(0,fin-dep))}</strong>`:"";
+}
+async function submitSale(){
+  const g=id=>document.getElementById(id);const note=g("f_note");
+  const plate=normalizePlate(g("f_plate").value);const clientName=g("f_clientName").value.trim();
+  const amount=cartTotal();const deposit=num(g("f_deposit").value);
+  const m=promoByCode(g("f_promoCode").value.trim());const finalAmount=m?Math.round(amount*(1-DISCOUNT_RATE)):amount;
+  const mpesaCode=logForm.paymentMethod==="M-Pesa"?(g("f_mpesaCode")?.value||"").trim().toUpperCase():"";
+  const serviceLabel=g("f_serviceNote").value.trim()||cartLabels();
+  if(!plate){note.textContent="Enter the number plate.";note.style.color="var(--danger)";return;}
+  if(logForm.cart.length===0){note.textContent="Add at least one service.";note.style.color="var(--danger)";return;}
+  if(!clientName||!deposit){note.textContent="Fill in owner name and deposit received.";note.style.color="var(--danger)";return;}
+  if(logForm.paymentMethod==="M-Pesa"&&!mpesaCode){note.textContent="Enter the M-Pesa code.";note.style.color="var(--danger)";return;}
+  if(logForm.paymentMethod==="Cash"&&!logForm.cashConfirmed){note.textContent="Confirm cash received.";note.style.color="var(--danger)";return;}
+  if(BUSY)return;BUSY=true;g("f_submit").disabled=true;note.textContent="Saving...";note.style.color="#7a7a7a";
+  try{
+    const stage=logForm.closed?"Closed":(deposit>0?"Deposit":"New");
+    const finalDeposit=logForm.closed?finalAmount:deposit;
+    const res=await api("addSale",{plate,model:logForm.model,make:logForm.make,clientName,phone:g("f_phone").value.trim(),vehicleClass:logForm.vehicleClass,channel:g("f_channel").value,service:serviceLabel,amount,finalAmount,discount:amount-finalAmount,promoCode:m?m.code:"",deposit:finalDeposit,paymentMethod:logForm.paymentMethod,mpesaCode,cashConfirmed:logForm.paymentMethod==="Cash"?logForm.cashConfirmed:false,stage,loggedBy:g("f_loggedBy").value.trim()});
+    if(!res||res.ok!==true){note.textContent="Save failed: "+((res&&res.error)||"no response");note.style.color="var(--danger)";return;}
+    logForm=newLogForm();await loadData();showToast("Sale logged");renderAll();
+    document.querySelector('.tab[data-tab="pipeline"]')?.click();
+  }catch(e){note.textContent="Save failed: "+(e.message||e);note.style.color="var(--danger)";}
+  finally{BUSY=false;const b=document.getElementById("f_submit");if(b)b.disabled=false;}
+}
 
-let pipeFilter="all";
-function renderPipeline(){const el=document.getElementById("panel-pipeline");const counts={};STAGES.forEach(s=>counts[s]=STATE.sales.filter(x=>x.stage===s).length);let list=[...STATE.sales].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));if(pipeFilter!=="all")list=list.filter(s=>s.stage===pipeFilter);let html=`<div style="font-size:12px;color:#9a9a9a;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.5;">How it works: a new booking starts at <strong style="color:#e8e8e8;">New</strong>. Once a deposit is taken it moves to <strong style="color:var(--warn);">Deposit paid</strong>. Tap <strong style="color:#7aa8ff;">In progress</strong> when work begins, then <strong style="color:var(--lime);">Closed</strong> when the job is done — closing a job always clears its balance to zero.</div><div class="cards">${STAGES.map(st=>`<div class="card" style="cursor:pointer;${pipeFilter===st?'border-color:var(--lime);':''}" onclick="setPipeFilter('${st}')"><div class="label">${STAGE_LABELS[st]}</div><div class="value">${counts[st]}</div></div>`).join("")}</div><button class="btn-outline" style="margin-bottom:12px;" onclick="setPipeFilter('all')">Show all</button>`;if(list.length===0){html+=`<div class="empty">No jobs here yet.</div>`;}else list.forEach(s=>{const p=s.promoCode?promoByCode(s.promoCode):null;const bal=Math.max(0,Number(s.finalAmount)-Number(s.deposit));const paid=bal===0&&Number(s.finalAmount)>0;html+=`<div class="item"><div class="item-top"><div><div style="font-weight:700;font-size:14px;">${esc(s.clientName)}${s.plate?` <span style="color:var(--lime);font-size:12px;">&middot; ${esc(formatPlate(s.plate))}</span>`:""}</div><div style="font-size:11.5px;color:#8a8a8a;margin-top:2px;">${esc(s.service||"-")} &middot; ${esc(s.channel)}</div></div><span class="badge stage-${s.stage}">${STAGE_LABELS[s.stage]}</span></div><div class="stat-row"><span>Total <strong>${money(s.finalAmount)}</strong></span><span>Deposit <strong>${money(s.deposit)}</strong></span><span>Balance <strong style="color:${paid?'var(--lime)':bal>0?'var(--warn)':'#fff'};">${paid?"PAID IN FULL":money(bal)}</strong></span></div>${s.promoCode?`<div style="font-size:11.5px;color:var(--lime);margin-top:6px;">Promo: ${esc(s.promoCode)} (${esc(p?p.owner:"unlinked")})</div>`:""}<div class="stage-steps">${STAGES.map(st=>`<div class="stage-step ${STAGES.indexOf(st)<=STAGES.indexOf(s.stage)?'done':''}" onclick="moveStage('${s.id}','${st}')">${STAGE_LABELS[st]}</div>`).join("")}</div><div style="display:flex;gap:8px;margin-top:10px;"><button class="btn-outline" style="flex:1;" onclick="makeReceipt('${s.id}')">Receipt</button>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);" onclick="deleteSale('${s.id}')">Delete</button>`:""}</div></div>`;});el.innerHTML=html;}
+/* ================= PIPELINE ================= */
+function renderPipeline(){
+  const el=document.getElementById("panel-pipeline");if(!el)return;
+  const counts={};STAGES.forEach(s=>counts[s]=STATE.sales.filter(x=>x.stage===s).length);
+  let list=[...STATE.sales].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  if(pipeFilter!=="all")list=list.filter(s=>s.stage===pipeFilter);
+  let html=`<div style="font-size:12px;color:#9a9a9a;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.5;">Tap a stage on a card to move it. Moving to <strong style="color:var(--lime);">Closed</strong> marks the job done and clears its balance to <strong>paid in full</strong> automatically.</div>
+  <div class="cards">${STAGES.map(st=>`<div class="card" style="cursor:pointer;${pipeFilter===st?'border-color:var(--lime);':''}" onclick="setPipeFilter('${st}')"><div class="label">${STAGE_LABELS[st]}</div><div class="value">${counts[st]}</div></div>`).join("")}</div>
+  <button class="btn-outline" style="margin-bottom:12px;" onclick="setPipeFilter('all')">Show all</button>`;
+  if(list.length===0)html+=`<div class="empty">No jobs here yet.</div>`;
+  else list.forEach(s=>{
+    const p=s.promoCode?promoByCode(s.promoCode):null;const bal=saleBalance(s);const paid=isCleared(s);
+    html+=`<div class="item"><div class="item-top"><div><div style="font-weight:700;font-size:14px;">${esc(s.clientName)}${s.plate?` <span style="color:var(--lime);font-size:12px;">· ${esc(formatPlate(s.plate))}</span>`:""}</div><div style="font-size:11.5px;color:#8a8a8a;margin-top:2px;">${esc(s.service||"-")} · ${esc(s.channel)}</div></div><span class="badge stage-${s.stage}">${STAGE_LABELS[s.stage]}</span></div>
+    <div class="stat-row"><span>Total <strong>${money(s.finalAmount)}</strong></span><span>Deposit <strong>${money(s.deposit)}</strong></span><span>Balance <strong style="color:${paid?'var(--lime)':bal>0?'var(--warn)':'#fff'};">${paid?"PAID IN FULL":money(bal)}</strong></span></div>
+    ${s.promoCode?`<div style="font-size:11.5px;color:var(--lime);margin-top:6px;">Promo: ${esc(s.promoCode)} (${esc(p?p.owner:"unlinked")})</div>`:""}
+    <div class="stage-steps">${STAGES.map(st=>`<div class="stage-step ${STAGES.indexOf(st)<=STAGES.indexOf(s.stage)?'done':''}" onclick="moveStage('${s.id}','${st}')">${STAGE_LABELS[st]}</div>`).join("")}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;">${(bal>0&&s.stage!=="Closed")?`<button class="btn-outline" style="flex:1;color:var(--lime);border-color:var(--lime);" onclick="clearBalance('${s.id}')">Mark balance received</button>`:""}<button class="btn-outline" style="flex:1;" onclick="makeReceipt('${s.id}')">Receipt</button>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);" onclick="deleteSale('${s.id}')">Delete</button>`:""}</div></div>`;
+  });
+  el.innerHTML=html;
+}
 function setPipeFilter(f){pipeFilter=f;renderPipeline();}
 async function moveStage(id,stage){
   if(BUSY)return;
   if(stage==="Closed"&&!confirm("Close this job? The full balance will be marked as paid."))return;
   BUSY=true;
-  try{
-    const res=await api("setStage",{id,stage});
-    if(!res||res.ok!==true){showToast((stage==="Closed"?"Close failed: ":"Update failed: ")+(res&&(res.error||res.message)?(res.error||res.message):"no response from server"),true);return;}
+  try{const res=await api("setStage",{id,stage});
+    if(!res||res.ok!==true){showToast((stage==="Closed"?"Close failed: ":"Update failed: ")+((res&&res.error)||"no response"),true);return;}
     await loadData();showToast(stage==="Closed"?"Closed & paid in full":"Moved to "+STAGE_LABELS[stage]);renderAll();
-  }catch(e){showToast("Update failed: "+(e&&e.message?e.message:String(e)),true);}finally{BUSY=false;}
+  }catch(e){showToast("Update failed: "+(e.message||e),true);}finally{BUSY=false;}
 }
-async function deleteSale(id){if(BUSY)return;if(!confirm("Delete this reservation?"))return;BUSY=true;try{await api("deleteSale",{id});await loadData();renderAll();}catch(e){showToast("Failed - try again",true);}finally{BUSY=false;}}
+async function clearBalance(id){
+  if(BUSY)return;const s=STATE.sales.find(x=>x.id===id);if(!s)return;
+  if(!confirm("Mark balance of "+money(saleBalance(s))+" as received? This clears the balance but does NOT close the job."))return;
+  BUSY=true;
+  try{const res=await api("clearBalance",{id});
+    if(!res||res.ok!==true){showToast("Failed: "+((res&&res.error)||"no response"),true);return;}
+    await loadData();showToast("Balance cleared");renderAll();
+  }catch(e){showToast("Failed: "+(e.message||e),true);}finally{BUSY=false;}
+}
+async function deleteSale(id){
+  if(BUSY)return;if(!confirm("Delete this reservation?"))return;BUSY=true;
+  try{await api("deleteSale",{id});await loadData();renderAll();showToast("Deleted");}catch(e){showToast("Failed",true);}finally{BUSY=false;}
+}
+function makeReceipt(id){
+  const s=STATE.sales.find(x=>x.id===id);if(!s)return;const bal=saleBalance(s);const paid=isCleared(s);
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Receipt</title><style>body{font-family:sans-serif;padding:24px;max-width:420px;margin:auto;}h2{margin:0;}.muted{color:#777;font-size:13px;}table{width:100%;border-collapse:collapse;margin-top:14px;}td{padding:6px 0;border-bottom:1px solid #eee;font-size:14px;}.tot{font-weight:700;}</style></head><body>
+  <h2>Glossmith</h2><div class="muted">Sales receipt</div>
+  <div style="margin-top:14px;font-size:13px;"><strong>${esc(s.clientName)}</strong>${s.plate?" · "+esc(formatPlate(s.plate)):""}<br><span class="muted">${esc(s.phone||"")} · ${String(s.timestamp).slice(0,10)}</span></div>
+  <table><tr><td>${esc(s.service||"Service")}</td><td style="text-align:right;">${money(s.amount)}</td></tr>
+  ${num(s.discount)>0?`<tr><td>Promo discount</td><td style="text-align:right;">−${money(s.discount)}</td></tr>`:""}
+  <tr class="tot"><td>Total</td><td style="text-align:right;">${money(s.finalAmount)}</td></tr>
+  <tr><td>Paid</td><td style="text-align:right;">${money(s.deposit)}</td></tr>
+  <tr class="tot"><td>Balance</td><td style="text-align:right;">${paid?"PAID IN FULL":money(bal)}</td></tr></table>
+  <div class="muted" style="margin-top:16px;">Payment: ${esc(s.paymentMethod||"-")}${s.mpesaCode?" · "+esc(s.mpesaCode):""}</div>
+  </body></html>`);w.document.close();
+}
 
-let vehQuery="";
-function membershipForPlate(plate){const p=normalizePlate(plate);return STATE.members.find(m=>normalizePlate(m.plate)===p)||null;}
-function normalizePhone(phone){const d=String(phone||"").replace(/\D/g,"");return d.length>=9?d.slice(-9):d;}
-function ownerKey(v){const p=normalizePhone(v.phone);if(p)return "p:"+p;const n=String(v.ownerName||"").trim().toLowerCase();if(n)return "n:"+n;return "v:"+String(v.plate||"").trim().toUpperCase();}
-function groupVehiclesByOwner(){const groups={};STATE.vehicles.forEach(v=>{const key=ownerKey(v);if(!groups[key])groups[key]={ownerName:v.ownerName||"",phone:v.phone||"",vehicles:[]};groups[key].vehicles.push(v);if(!groups[key].ownerName&&v.ownerName)groups[key].ownerName=v.ownerName;if(!groups[key].phone&&v.phone)groups[key].phone=v.phone;});return Object.values(groups);}
-function renderVehicles(){const el=document.getElementById("panel-vehicles");
-  el.innerHTML=`<label>Search by plate, owner or phone<input id="veh_q" placeholder="e.g. KDS 112Z or 07XX" value="${esc(vehQuery)}"></label><div id="veh_results"></div>`;
-  const input=document.getElementById("veh_q");
-  input.addEventListener("input",e=>{vehQuery=e.target.value;renderVehicleResults();});
+/* ================= VEHICLES ================= */
+function ownerKey(v){const p=normalizePhone(v.phone);if(p)return "p:"+p;const n=String(v.clientName||"").trim().toLowerCase();if(n)return "n:"+n;return "v:"+normalizePlate(v.plate);}
+function groupVehiclesByOwner(){
+  const groups={};
+  STATE.vehicles.forEach(v=>{const k=ownerKey(v);if(!groups[k])groups[k]={clientName:v.clientName||"",phone:v.phone||"",vehicles:[]};groups[k].vehicles.push(v);if(!groups[k].clientName&&v.clientName)groups[k].clientName=v.clientName;if(!groups[k].phone&&v.phone)groups[k].phone=v.phone;});
+  return Object.values(groups);
+}
+function renderVehicles(){
+  const el=document.getElementById("panel-vehicles");if(!el)return;
+  el.innerHTML=`<label>Search by plate, owner or phone<input id="veh_q" placeholder="e.g. KDS 112Z or 0722…" value="${esc(vehQuery)}"></label><div id="veh_results"></div>`;
+  document.getElementById("veh_q").addEventListener("input",e=>{vehQuery=e.target.value;renderVehicleResults();});
   renderVehicleResults();
 }
 function renderVehicleResults(){
   const el=document.getElementById("veh_results");if(!el)return;
   let owners=groupVehiclesByOwner();
-  if(vehQuery){
-    const q=vehQuery.trim().toLowerCase();
-    const qPlate=normalizePlate(vehQuery);
-    const qPhone=normalizePhone(vehQuery);
-    owners=owners.filter(o=>
-      String(o.ownerName||"").toLowerCase().includes(q)
-      || (qPhone.length>=3 && normalizePhone(o.phone).includes(qPhone))
-      || o.vehicles.some(v=>qPlate.length>0 && normalizePlate(v.plate).includes(qPlate))
-    );
-  }
-  owners.sort((a,b)=>String(a.ownerName||"zzz").localeCompare(String(b.ownerName||"zzz")));
-  if(owners.length===0){el.innerHTML=`<div class="empty">${STATE.vehicles.length===0?"No vehicles yet — log a sale with a plate number and it'll appear here immediately.":"No match for that search."}</div>`;return;}
+  if(vehQuery){const q=vehQuery.trim().toLowerCase();const qP=normalizePlate(vehQuery);const qPh=normalizePhone(vehQuery);
+    owners=owners.filter(o=>String(o.clientName||"").toLowerCase().includes(q)||(qPh.length>=3&&normalizePhone(o.phone).includes(qPh))||o.vehicles.some(v=>qP.length>0&&normalizePlate(v.plate).includes(qP)));}
+  owners.sort((a,b)=>String(a.clientName||"zzz").localeCompare(String(b.clientName||"zzz")));
+  if(owners.length===0){el.innerHTML=`<div class="empty">${STATE.vehicles.length===0?"No vehicles yet — log a sale with a plate and it appears here instantly.":"No match."}</div>`;return;}
   el.innerHTML=owners.map(o=>{
     const allSales=o.vehicles.flatMap(v=>vehicleSales(v.plate));
-    const closedSales=allSales.filter(s=>s.stage==="Closed");
-    const spent=closedSales.reduce((a,s)=>a+Number(s.finalAmount||0),0);
-    const owed=allSales.reduce((a,s)=>a+Math.max(0,Number(s.finalAmount||0)-Number(s.deposit||0)),0);
-    const vehiclesHtml=o.vehicles.map(v=>{
+    const spent=allSales.filter(s=>isCleared(s)).reduce((a,s)=>a+num(s.finalAmount),0);
+    const owed=allSales.reduce((a,s)=>a+saleBalance(s),0);
+    const vh=o.vehicles.map(v=>{
       const sales=vehicleSales(v.plate).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
-      const last=sales[0]?sales[0].timestamp:null;
-      const member=membershipForPlate(v.plate);
-      return `<div style="border-top:1px solid var(--border);padding:10px 0;"><div class="item-top"><div><div style="font-weight:700;font-size:14px;letter-spacing:0.3px;">${esc(formatPlate(v.plate))}</div>${(v.make||v.model)?`<div style="font-size:11px;color:#7a7a7a;margin-top:2px;">${esc(v.make||"")} ${esc(v.model||"")} · ${v.vehicleClass==1?"SUV":"Saloon"}</div>`:`<div style="font-size:11px;color:#7a7a7a;margin-top:2px;">${v.vehicleClass==1?"SUV":"Saloon"} pricing</div>`}</div>${member?`<span class="badge lime">${esc(member.tier)} member</span>`:`<span class="badge">${sales.length} visit${sales.length===1?"":"s"}</span>`}</div><details style="margin-top:6px;"><summary style="cursor:pointer;font-size:12px;color:#9a9a9a;">History (${sales.length})</summary>${sales.length===0?`<div style="font-size:11.5px;color:#7a7a7a;padding:6px 0;">No jobs logged for this plate yet.</div>`:sales.map(s=>`<div style="font-size:11.5px;color:#b5b5b5;padding:6px 0;border-top:1px solid var(--border);">${String(s.timestamp).slice(0,10)} &middot; ${esc(s.service||"-")} &middot; ${money(s.finalAmount)} &middot; <span style="color:var(--lime);">${STAGE_LABELS[s.stage]}</span></div>`).join("")}</details><div style="font-size:10.5px;color:#7a7a7a;margin-top:4px;">Last visit ${last?String(last).slice(0,10):"—"}</div></div>`;
+      const mem=memberForPlate(v.plate);const last=sales[0]?sales[0].timestamp:null;
+      return `<div style="border-top:1px solid var(--border);padding:10px 0;"><div class="item-top"><div><div style="font-weight:700;font-size:14px;">${esc(formatPlate(v.plate))}</div><div style="font-size:11px;color:#7a7a7a;margin-top:2px;">${v.model?esc(v.model)+" · ":""}${v.vehicleClass==1?"SUV":"Saloon"} pricing</div></div>${mem?`<span class="badge lime">${mem.type==="partner"?"Partner":"Member"}</span>`:`<span class="badge">${sales.length} visit${sales.length===1?"":"s"}</span>`}</div>
+      <details style="margin-top:6px;"><summary style="cursor:pointer;font-size:12px;color:#9a9a9a;">History (${sales.length})</summary>${sales.length===0?`<div style="font-size:11.5px;color:#7a7a7a;padding:6px 0;">No jobs yet.</div>`:sales.map(s=>`<div style="font-size:11.5px;color:#b5b5b5;padding:6px 0;border-top:1px solid var(--border);">${String(s.timestamp).slice(0,10)} · ${esc(s.service||"-")} · ${money(s.finalAmount)} · <span style="color:${isCleared(s)?'var(--lime)':'#c98a3a'};">${isCleared(s)?"paid":money(saleBalance(s))+" owed"}</span> · ${STAGE_LABELS[s.stage]}</div>`).join("")}</details>
+      <div style="font-size:10.5px;color:#7a7a7a;margin-top:4px;">Last visit ${last?String(last).slice(0,10):"—"}</div></div>`;
     }).join("");
-    return `<div class="item"><div class="item-top"><div><div style="font-weight:700;font-size:15px;">${esc(o.ownerName||"No owner name")}</div><div style="font-size:11.5px;color:#8a8a8a;margin-top:2px;">${o.phone?esc(o.phone):"No phone"}</div></div><span class="badge">${o.vehicles.length} vehicle${o.vehicles.length===1?"":"s"}</span></div><div class="stat-row"><span>Spent <strong style="color:var(--lime);">${money(spent)}</strong></span><span>Owed <strong>${money(owed)}</strong></span></div>${vehiclesHtml}</div>`;
+    return `<div class="item"><div class="item-top"><div><div style="font-weight:700;font-size:15px;">${esc(o.clientName||"No owner name")}</div><div style="font-size:11.5px;color:#8a8a8a;margin-top:2px;">${o.phone?esc(o.phone):"No phone"}</div></div><span class="badge">${o.vehicles.length} vehicle${o.vehicles.length===1?"":"s"}</span></div><div class="stat-row"><span>Spent <strong style="color:var(--lime);">${money(spent)}</strong></span><span>Owed <strong>${money(owed)}</strong></span></div>${vh}</div>`;
   }).join("");
 }
 
-function renderPromos(){const el=document.getElementById("panel-promos");let html=`<div class="item"><div style="font-family:'Space Grotesk';font-weight:700;font-size:13.5px;margin-bottom:10px;">New partner promo code</div><label>Code<input id="p_code" placeholder="e.g. NAIROBICLUB" style="text-transform:uppercase;"></label><label>Partner / owner name<input id="p_owner" placeholder="e.g. @nairobicarclub"></label><label>Category<select id="p_category">${CATEGORIES.map(c=>`<option>${c}</option>`).join("")}</select></label><div style="font-size:11.5px;color:#7a7a7a;margin-bottom:12px;">8% off for the client, 10% commission for the partner on close. Duplicate codes are blocked automatically.</div><button class="btn" id="p_submit">Create code</button><div id="p_note" style="font-size:11.5px;margin-top:8px;"></div></div>`;if(STATE.promos.length===0){html+=`<div class="empty">No promo codes yet.</div>`;}else STATE.promos.forEach(p=>{const st=promoStats(p.code);html+=`<div class="item"><div class="item-top"><div><div style="font-weight:700;font-size:14px;">${esc(p.code)}</div><div style="font-size:11.5px;color:#8a8a8a;">${esc(p.owner)} &middot; ${esc(p.category)}</div></div>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);" onclick="deletePromo('${p.id}')">Delete</button>`:""}</div><div class="stat-row"><span>Site uses <strong>${st.siteUses}</strong></span><span>Closed <strong>${st.closed}</strong></span><span>Commission <strong style="color:var(--lime);">${money(st.commission)}</strong></span></div><a href="?code=${encodeURIComponent(p.code)}" target="_blank" style="display:block;margin-top:10px;text-align:center;border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--lime);font-size:12px;font-weight:600;text-decoration:none;">Open partner link &#8599;</a></div>`;});el.innerHTML=html;document.getElementById("p_submit").addEventListener("click",submitPromo);}
-async function submitPromo(){const code=document.getElementById("p_code").value.trim().toUpperCase();const owner=document.getElementById("p_owner").value.trim();const category=document.getElementById("p_category").value;const note=document.getElementById("p_note");if(!code||!owner){note.textContent="Enter both a code and a partner name.";note.style.color="var(--danger)";return;}if(BUSY)return;BUSY=true;note.textContent="Creating...";note.style.color="#7a7a7a";try{const res=await api("addPromo",{code,owner,category,createdAt:new Date().toISOString()});if(res&&res.ok===false){note.textContent=res.error||"Could not create code.";note.style.color="var(--danger)";return;}await loadData();showToast("Promo code created");renderAll();}catch(e){note.textContent="Failed - try again";note.style.color="var(--danger)";}finally{BUSY=false;}}
-async function deletePromo(id){if(!confirm("Delete this promo code?"))return;await api("deletePromo",{id});await loadData();renderAll();}
+/* ================= PROMO CODES ================= */
+function renderPromos(){
+  const el=document.getElementById("panel-promos");if(!el)return;
+  let html=`<div class="form-wrap"><div class="section-title">Add a promo code</div>
+    <label>Code<input id="pr_code" placeholder="e.g. NAIROBICLUB" style="text-transform:uppercase;"></label>
+    <label>Partner / owner<input id="pr_owner" placeholder="e.g. Nairobi Car Club"></label>
+    <label>Category<select id="pr_cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join("")}</select></label>
+    <button class="btn" id="pr_add">Add code</button><div id="pr_note" style="font-size:11.5px;color:#7a7a7a;margin-top:8px;"></div></div>
+    <div class="section-title">Active codes</div>`;
+  if(STATE.promos.length===0)html+=`<div class="empty">No promo codes yet.</div>`;
+  else html+=STATE.promos.map(p=>{
+    const uses=STATE.sales.filter(s=>String(s.promoCode).toUpperCase()===String(p.code).toUpperCase()).length;
+    return `<div class="item"><div class="item-top"><div><div style="font-weight:700;">${esc(p.code)}</div><div style="font-size:11.5px;color:#8a8a8a;">${esc(p.owner)} · ${esc(p.category)}</div></div><span class="badge">${uses} use${uses===1?"":"s"}</span></div>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);margin-top:8px;" onclick="deletePromo('${p.id}')">Delete</button>`:""}</div>`;
+  }).join("");
+  el.innerHTML=html;
+  document.getElementById("pr_add").addEventListener("click",addPromo);
+}
+async function addPromo(){
+  const code=document.getElementById("pr_code").value.trim();const owner=document.getElementById("pr_owner").value.trim();const category=document.getElementById("pr_cat").value;const note=document.getElementById("pr_note");
+  if(!code||!owner){note.textContent="Enter code and partner.";note.style.color="var(--danger)";return;}
+  if(BUSY)return;BUSY=true;
+  try{const res=await api("addPromo",{code,owner,category});if(!res||res.ok!==true){note.textContent=(res&&res.error)||"Failed";note.style.color="var(--danger)";return;}await loadData();showToast("Promo added");renderAll();}
+  catch(e){note.textContent="Failed";note.style.color="var(--danger)";}finally{BUSY=false;}
+}
+async function deletePromo(id){if(BUSY)return;if(!confirm("Delete this promo code?"))return;BUSY=true;try{await api("deletePromo",{id});await loadData();renderAll();showToast("Deleted");}catch(e){showToast("Failed",true);}finally{BUSY=false;}}
 
-function renderMembers(){const el=document.getElementById("panel-members");let html=`<div style="font-size:12px;color:#9a9a9a;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.5;">The Maintenance Club: members pay monthly for regular upkeep. A fuller plate-based membership engine (member numbers, quarterly to gold upgrade, maintenance-due alerts, revoke rights) is coming in a later update. For now this keeps a simple member list.</div><div class="item"><div style="font-family:'Space Grotesk';font-weight:700;font-size:13.5px;margin-bottom:10px;">Add member</div><label>Name<input id="mm_name"></label><label>Phone<input id="mm_phone"></label><label>Tier<select id="mm_tier"><option>Standard</option><option>Silver</option><option>Gold</option><option>Car Club Partner</option></select></label><label>M-Pesa reference<input id="mm_ref" style="text-transform:uppercase;"></label><button class="btn" id="mm_submit">Add member</button></div>`;if(STATE.members.length===0){html+=`<div class="empty">No members yet.</div>`;}else STATE.members.forEach(m=>{html+=`<div class="item" style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;font-size:13.5px;">${esc(m.name)}</div><div style="font-size:11.5px;color:#8a8a8a;">${esc(m.tier)} &middot; joined ${String(m.joinedAt||"").slice(0,10)}${m.mpesaRef?` &middot; ${esc(m.mpesaRef)}`:""}</div></div>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);" onclick="deleteMember('${m.id}')">Delete</button>`:""}</div>`;});el.innerHTML=html;document.getElementById("mm_submit").addEventListener("click",submitMember);}
-async function submitMember(){if(BUSY)return;const name=document.getElementById("mm_name").value.trim();if(!name)return;BUSY=true;try{await api("addMember",{name,phone:document.getElementById("mm_phone").value.trim(),tier:document.getElementById("mm_tier").value,mpesaRef:document.getElementById("mm_ref").value.trim().toUpperCase(),joinedAt:new Date().toISOString().slice(0,10)});await loadData();showToast("Member added");renderAll();}catch(e){showToast("Failed - try again",true);}finally{BUSY=false;}}
-async function deleteMember(id){if(!confirm("Remove this member?"))return;await api("deleteMember",{id});await loadData();renderAll();}
+/* ================= MEMBERSHIP (in-house + partners) ================= */
+function renderMembers(){
+  const el=document.getElementById("panel-members");if(!el)return;
+  const inhouse=STATE.members.filter(m=>(m.type||"inhouse")==="inhouse");
+  const partners=STATE.members.filter(m=>m.type==="partner");
+  const list=memberSub==="inhouse"?inhouse:partners;
+  let html=`<div class="subtabs"><button class="subtab ${memberSub==='inhouse'?'active':''}" onclick="setMemberSub('inhouse')">In-house (${inhouse.length})</button><button class="subtab ${memberSub==='partner'?'active':''}" onclick="setMemberSub('partner')">Club partners (${partners.length})</button></div>
+  <div class="form-wrap"><div class="section-title">Add ${memberSub==='inhouse'?'in-house member':'club partner'}</div>
+    <label>Number plate<input id="mb_plate" placeholder="e.g. KDS 112Z" style="text-transform:uppercase;"></label>
+    <div id="mb_plateHint"></div>
+    <label>${memberSub==='inhouse'?'Owner name':'Partner / club name'}<input id="mb_name"></label>
+    <label>Phone<input id="mb_phone" placeholder="07XX XXX XXX"></label>
+    <label>Join payment method</label>
+    <div class="method-row"><button type="button" class="method-btn active" id="mb_mpesa">M-Pesa</button><button type="button" class="method-btn" id="mb_cash">Cash</button></div>
+    <div id="mb_payField"></div>
+    <button class="btn" id="mb_add">Add ${memberSub==='inhouse'?'member':'partner'}</button>
+    <div id="mb_note" style="font-size:11.5px;color:#7a7a7a;margin-top:8px;"></div></div>
+    <div class="section-title">${memberSub==='inhouse'?'In-house members':'Club partners'}</div>`;
+  if(list.length===0)html+=`<div class="empty">None yet.</div>`;
+  else html+=list.map(m=>`<div class="item"><div class="item-top"><div><div style="font-weight:700;">${esc(m.name||"—")}</div><div style="font-size:11.5px;color:#8a8a8a;">${m.plate?esc(formatPlate(m.plate))+" · ":""}${esc(m.phone||"")}</div></div><span class="badge lime">${esc(m.paymentMethod||"")}</span></div><div style="font-size:11px;color:#7a7a7a;margin-top:6px;">Joined ${m.joinedAt?String(m.joinedAt).slice(0,10):"—"}${m.mpesaRef?" · Ref "+esc(m.mpesaRef):""}</div>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);margin-top:8px;" onclick="deleteMember('${m.id}')">Remove</button>`:""}</div>`).join("");
+  el.innerHTML=html;
+  let payMethod="M-Pesa";
+  function renderPay(){const f=document.getElementById("mb_payField");if(payMethod==="M-Pesa")f.innerHTML=`<label>M-Pesa reference<input id="mb_ref" placeholder="e.g. QCH7XXXXX" style="text-transform:uppercase;"></label>`;else f.innerHTML=`<label style="color:#7a7a7a;">Cash — no reference needed</label>`;}
+  renderPay();
+  document.getElementById("mb_mpesa").addEventListener("click",()=>{payMethod="M-Pesa";document.getElementById("mb_mpesa").classList.add("active");document.getElementById("mb_cash").classList.remove("active");renderPay();});
+  document.getElementById("mb_cash").addEventListener("click",()=>{payMethod="Cash";document.getElementById("mb_cash").classList.add("active");document.getElementById("mb_mpesa").classList.remove("active");renderPay();});
+  document.getElementById("mb_plate").addEventListener("blur",()=>{const raw=document.getElementById("mb_plate").value;const plate=normalizePlate(raw);const h=document.getElementById("mb_plateHint");if(!plate){h.innerHTML="";return;}document.getElementById("mb_plate").value=formatPlate(plate);const v=findVehicle(plate);if(v){h.innerHTML=`<div style="font-size:11.5px;color:var(--lime);margin:-6px 0 12px;">Known vehicle — details auto-filled.</div>`;if(v.clientName)document.getElementById("mb_name").value=v.clientName;if(v.phone)document.getElementById("mb_phone").value=v.phone;}else h.innerHTML="";});
+  document.getElementById("mb_add").addEventListener("click",()=>addMember(()=>payMethod));
+}
+function setMemberSub(s){memberSub=s;renderMembers();}
+async function addMember(getPay){
+  const plate=normalizePlate(document.getElementById("mb_plate").value);const name=document.getElementById("mb_name").value.trim();const phone=document.getElementById("mb_phone").value.trim();const paymentMethod=getPay();const mpesaRef=paymentMethod==="M-Pesa"?(document.getElementById("mb_ref")?.value||"").trim().toUpperCase():"";const note=document.getElementById("mb_note");
+  if(!plate||!name){note.textContent="Enter plate and name.";note.style.color="var(--danger)";return;}
+  if(paymentMethod==="M-Pesa"&&!mpesaRef){note.textContent="Enter M-Pesa reference (or switch to Cash).";note.style.color="var(--danger)";return;}
+  if(BUSY)return;BUSY=true;
+  try{const res=await api("addMember",{type:memberSub,plate,name,phone,paymentMethod,mpesaRef});if(!res||res.ok!==true){note.textContent=(res&&res.error)||"Failed";note.style.color="var(--danger)";return;}await loadData();showToast("Added");renderAll();}
+  catch(e){note.textContent="Failed";note.style.color="var(--danger)";}finally{BUSY=false;}
+}
+async function deleteMember(id){if(BUSY)return;if(!confirm("Remove this member?"))return;BUSY=true;try{await api("deleteMember",{id});await loadData();renderAll();showToast("Removed");}catch(e){showToast("Failed",true);}finally{BUSY=false;}}
 
-function renderReports(){const el=document.getElementById("panel-reports");if(ROLE!=="owner"){el.innerHTML="";return;}const months=[];const now=new Date();for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"),label:d.toLocaleString('en',{month:'short'})});}const revByMonth=months.map(m=>({...m,rev:STATE.sales.filter(s=>s.stage==="Closed"&&String(s.timestamp).slice(0,7)===m.key).reduce((a,s)=>a+Number(s.finalAmount||0),0)}));const maxRev=Math.max(1,...revByMonth.map(m=>m.rev));let html=`<div class="section-title">Monthly revenue (last 6 months)</div><div class="item"><div class="chart">${revByMonth.map(m=>`<div class="bar-col"><div class="bar-val">${m.rev?Math.round(m.rev/1000)+'k':''}</div><div class="bar" style="height:${Math.round((m.rev/maxRev)*100)}%;"></div><div class="bar-label">${m.label}</div></div>`).join("")}</div></div><div class="section-title">Partner / influencer ranking</div>${renderPartnerRanking(20)}`;const owing=STATE.sales.filter(s=>Math.max(0,Number(s.finalAmount)-Number(s.deposit))>0).sort((a,b)=>(b.finalAmount-b.deposit)-(a.finalAmount-a.deposit));html+=`<div class="section-title">Outstanding balances</div>`;if(owing.length===0){html+=`<div class="empty">Everyone's paid up.</div>`;}else owing.forEach(s=>{html+=`<div class="item" style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;font-size:13.5px;">${esc(s.clientName)}</div><div style="font-size:11.5px;color:#8a8a8a;">${esc(s.service||"-")} &middot; ${STAGE_LABELS[s.stage]}</div></div><div style="text-align:right;"><div style="font-weight:700;color:var(--warn);">${money(Math.max(0,s.finalAmount-s.deposit))}</div><div style="font-size:10.5px;color:#7a7a7a;">of ${money(s.finalAmount)}</div></div></div>`;});el.innerHTML=html;}
-function renderPartnerRanking(limit){const ranked=STATE.promos.map(p=>({...p,...promoStats(p.code)})).sort((a,b)=>b.commission-a.commission).slice(0,limit);if(ranked.length===0)return`<div class="empty">No partners yet.</div>`;return ranked.map((p,i)=>`<div class="item" style="display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;align-items:center;"><span class="rank-num">${i+1}</span><div><div style="font-weight:700;font-size:13.5px;">${esc(p.owner)}</div><div style="font-size:11px;color:#8a8a8a;">${esc(p.code)} &middot; ${esc(p.category)} &middot; ${p.closed} closed</div></div></div><div style="font-weight:700;color:var(--lime);">${money(p.commission)}</div></div>`).join("");}
+/* ================= REPORTS ================= */
+function renderReports(){
+  const el=document.getElementById("panel-reports");if(!el)return;
+  const sales=STATE.sales;
+  const cleared=sales.filter(s=>isCleared(s));
+  const outstanding=sales.filter(s=>saleBalance(s)>0);
+  const clearedTotal=cleared.reduce((a,s)=>a+num(s.finalAmount),0);
+  const outstandingTotal=outstanding.reduce((a,s)=>a+saleBalance(s),0);
+  let cash=0,mpesa=0;sales.forEach(s=>{const d=num(s.deposit);if(d<=0)return;if(String(s.paymentMethod)==="Cash")cash+=d;else mpesa+=d;});
+  el.innerHTML=`
+  <div class="section-title">Payments collected (cash vs M-Pesa)</div>
+  <div class="money-split"><div class="card"><div class="label">M-Pesa</div><div class="value">${money(mpesa)}</div></div><div class="card"><div class="label">Cash</div><div class="value">${money(cash)}</div></div></div>
+  <div class="cards"><div class="card"><div class="label">Cleared balances</div><div class="value" style="color:var(--lime);">${money(clearedTotal)}</div><div class="sub">${cleared.length} paid in full</div></div>
+  <div class="card"><div class="label">Outstanding balances</div><div class="value" style="color:${outstandingTotal>0?'var(--warn)':'var(--lime)'};">${money(outstandingTotal)}</div><div class="sub">${outstanding.length} owing</div></div></div>
+  <div class="section-title">Cleared balances (paid in full)</div>
+  ${cleared.length===0?`<div class="empty">Nothing cleared yet.</div>`:cleared.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).map(s=>reportRow(s,true)).join("")}
+  <div class="section-title">Outstanding balances</div>
+  ${outstanding.length===0?`<div class="empty">No outstanding balances — all clear.</div>`:outstanding.sort((a,b)=>saleBalance(b)-saleBalance(a)).map(s=>reportRow(s,false)).join("")}`;
+}
+function reportRow(s,clearedMode){
+  const bal=saleBalance(s);
+  return `<div class="item"><div class="item-top"><div><div style="font-weight:700;font-size:13.5px;">${esc(s.clientName)}${s.plate?` · ${esc(formatPlate(s.plate))}`:""}</div><div style="font-size:11px;color:#8a8a8a;margin-top:2px;">${esc(s.service||"-")} · ${String(s.timestamp).slice(0,10)} · ${esc(s.paymentMethod||"")}</div></div><span class="badge ${clearedMode?'lime':''}">${clearedMode?"PAID":money(bal)+" owed"}</span></div><div class="stat-row"><span>Total <strong>${money(s.finalAmount)}</strong></span><span>Paid <strong>${money(s.deposit)}</strong></span><span>${STAGE_LABELS[s.stage]}</span></div></div>`;
+}
 
-function makeReceipt(id){const s=STATE.sales.find(x=>x.id===id);if(!s)return;const bal=Math.max(0,Number(s.finalAmount)-Number(s.deposit));const w=window.open("","_blank");w.document.write(`<html><head><title>Receipt - ${esc(s.clientName)}</title><style>body{font-family:Arial,sans-serif;max-width:420px;margin:20px auto;padding:24px;color:#111;}.h{display:flex;align-items:center;gap:10px;border-bottom:2px solid #121212;padding-bottom:12px;}.g{width:40px;height:40px;background:#B8FF00;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;}h2{margin:0;font-size:18px;}.muted{color:#666;font-size:12px;}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;}td{padding:7px 0;border-bottom:1px solid #eee;}td:last-child{text-align:right;font-weight:600;}.tot td{border-top:2px solid #121212;border-bottom:none;font-size:16px;font-weight:700;padding-top:10px;}.foot{margin-top:20px;font-size:11px;color:#888;text-align:center;}</style></head><body><div class="h"><div class="g">G</div><div><h2>Glossmith</h2><div class="muted">Auto Atelier &middot; Nairobi</div></div></div><div style="margin-top:14px;font-size:13px;"><strong>${esc(s.clientName)}</strong>${s.plate?` &middot; ${esc(formatPlate(s.plate))}`:""}<br><span class="muted">${esc(s.phone||"")} &middot; ${String(s.timestamp).slice(0,10)}</span></div><table><tr><td>${esc(s.service||"Service")}</td><td>${money(s.amount)}</td></tr>${s.discount>0?`<tr><td>Promo ${esc(s.promoCode)} (8% off)</td><td>-${money(s.discount)}</td></tr>`:""}<tr><td>Deposit paid (${esc(s.paymentMethod)}${s.mpesaCode?" &middot; "+esc(s.mpesaCode):""})</td><td>-${money(s.deposit)}</td></tr><tr class="tot"><td>Balance due</td><td>${money(bal)}</td></tr></table><div class="foot">Thank you for choosing Glossmith &middot; ${STAGE_LABELS[s.stage]}</div></body></html>`);w.document.close();setTimeout(()=>w.print(),400);}
+/* ================= PARTNER VIEW (promo landing) ================= */
+function renderPartnerView(code){
+  document.getElementById("gate").style.display="none";
+  const el=document.getElementById("partnerView");el.style.display="block";
+  el.innerHTML=`<div style="text-align:center;padding:40px 0;"><div class="gate-logo" style="margin:0 auto 18px;">G</div><div class="gate-title">Glossmith</div><div style="font-size:14px;color:#9a9a9a;margin-top:12px;">Show code <strong style="color:var(--lime);">${esc(code.toUpperCase())}</strong> at booking for 8% off.</div></div>`;
+  api("validatePromo",{code,source:"link"}).catch(()=>{});
+}
 
-async function renderPartnerView(code){document.getElementById("gate").style.display="none";const el=document.getElementById("partnerView");el.style.display="block";await loadData();const promo=promoByCode(code);if(!promo){el.innerHTML=`<div class="empty">That promo code no longer exists.</div>`;return;}const st=promoStats(code);el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:16px;"><span class="badge lime">Partner view</span></div><div class="item" style="padding:18px;margin-bottom:16px;"><div style="font-size:11px;color:#8a8a8a;text-transform:uppercase;">Promo code</div><div style="font-family:'Space Grotesk';font-weight:700;font-size:24px;color:var(--lime);margin-top:4px;">${esc(promo.code)}</div><div style="font-size:12.5px;color:#9a9a9a;margin-top:2px;">${esc(promo.owner)} &middot; ${esc(promo.category)}</div></div><div class="cards"><div class="card"><div class="label">Applied on site</div><div class="value">${st.siteUses}</div></div><div class="card"><div class="label">Closed sales</div><div class="value">${st.closed}</div></div><div class="card"><div class="label">Your commission</div><div class="value">${money(st.commission)}</div><div class="sub">10% of closed sales</div></div></div><div style="font-size:11.5px;color:#6b6b6b;">Only your code's activity is shown here - no other business figures.</div>`;}
-
-function renderAll(){[renderDashboard,renderLog,renderPipeline,renderVehicles,renderPromos,renderMembers,renderReports].forEach(function(fn){try{fn();}catch(e){console.error("render error in "+fn.name,e);}});}
-(async function init(){if(WEB_APP_URL.includes("YOUR_WEB_APP_URL_HERE")){document.getElementById("gate").style.display="none";const b=document.getElementById("setupBanner");b.style.display="block";b.textContent="Paste your Google Apps Script Web App URL into WEB_APP_URL near the top of this file.";return;}const bt=document.getElementById("buildTag");if(bt)bt.textContent="App build: "+EXPECTED_SCRIPT_VERSION;const bt2=document.getElementById("buildTagApp");if(bt2)bt2.textContent=EXPECTED_SCRIPT_VERSION;const params=new URLSearchParams(window.location.search);const code=params.get("code");if(code){renderPartnerView(code);return;}buildKeypad();const saved=sessionStorage.getItem("gs_role");if(saved){ROLE=saved;enterApp();}})();
+/* ================= INIT ================= */
+(async function init(){
+  if(WEB_APP_URL.includes("YOUR_WEB_APP_URL_HERE")){document.getElementById("gate").style.display="none";const b=document.getElementById("setupBanner");b.style.display="block";b.textContent="Paste your Web App URL into WEB_APP_URL.";return;}
+  const bt=document.getElementById("buildTag");if(bt)bt.textContent="App build: "+EXPECTED_SCRIPT_VERSION;
+  const params=new URLSearchParams(location.search);const code=params.get("code");
+  if(code){renderPartnerView(code);return;}
+  buildKeypad();
+  const saved=sessionStorage.getItem("gs_role");
+  if(saved){ROLE=saved;enterApp();}
+})();
 </script>
 </body>
 </html>
