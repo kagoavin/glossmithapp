@@ -92,6 +92,7 @@
 </div>
 <div id="partnerView" class="wrap" style="display:none;"></div>
 <div id="mainApp" class="wrap" style="display:none;">
+  <div id="versionBanner" style="display:none;background:var(--danger);color:#fff;font-size:12px;font-weight:600;padding:10px 12px;border-radius:8px;margin-bottom:14px;line-height:1.5;"></div>
   <div class="topbar">
     <div class="brand"><div class="logo">G</div><div><h1>Glossmith <span>Sales</span></h1></div></div>
     <button class="role-chip" id="roleChip" onclick="logout()">Staff · Lock</button>
@@ -108,6 +109,10 @@
 <div id="toast" class="toast"></div>
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmMMTy7QJ9-1yOGgS_Ag-7lX4shk1HOXNxs6p4xoJMfQqmSLY5mvb0UbRkhw9ldeFW/exec";
+// Must match SCRIPT_VERSION in Code.gs. If the backend response doesn't
+// carry this exact string, the live deployment is running older code —
+// this shows a banner instead of leaving you guessing.
+const EXPECTED_SCRIPT_VERSION = "phase1-2026-07-02-e";
 const DISCOUNT_RATE=0.08, COMMISSION_RATE=0.10;
 const CHANNELS=["WhatsApp","Website","Walk-in"];
 const CATEGORIES=["Car Club","Influencer","Staff Referral","Other"];
@@ -198,6 +203,8 @@ const formatPlate=p=>{const n=normalizePlate(p);return n.length===7?n.slice(0,3)
 function showToast(m,e){const t=document.getElementById("toast");t.textContent=m;t.className="toast"+(e?" err":"");t.style.display="block";setTimeout(()=>t.style.display="none",e?6000:2400);}
 async function api(action,payload){const r=await fetch(WEB_APP_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,payload:payload||{}})});return r.json();}
 async function loadData(){const r=await fetch(WEB_APP_URL);const d=await r.json();
+  STATE.serverVersion=d.version||null;
+  checkServerVersion();
   STATE.sales=(d.sales||[]).map(s=>({...s,closed:s.closed===true||s.closed==="TRUE"||s.closed==="true",stage:s.stage||deriveStage(s)}));
   STATE.promos=d.promos||[];STATE.promoEvents=d.promoEvents||[];STATE.members=d.members||[];STATE.vehicles=d.vehicles||[];}
 function findVehicle(plate){const p=normalizePlate(plate);if(!p)return null;return STATE.vehicles.find(v=>normalizePlate(v.plate)===p)||null;}
@@ -214,6 +221,7 @@ function logout(){sessionStorage.removeItem("gs_role");ROLE=null;pinBuffer="";do
 
 function buildTabs(){const all=[{id:"dashboard",label:"Dashboard",owner:true},{id:"log",label:"Log Sale",owner:false},{id:"pipeline",label:"Pipeline",owner:false},{id:"vehicles",label:"Vehicles",owner:false},{id:"promos",label:"Promo Codes",owner:false},{id:"members",label:"Membership",owner:false},{id:"reports",label:"Reports",owner:true}];const visible=all.filter(t=>ROLE==="owner"?true:!t.owner);const tabsEl=document.getElementById("tabs");tabsEl.innerHTML=visible.map((t,i)=>`<button class="tab ${i===0?'active':''}" data-tab="${t.id}">${t.label}</button>`).join("");tabsEl.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>{tabsEl.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));btn.classList.add("active");document.getElementById("panel-"+btn.dataset.tab).classList.add("active");}));document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));document.getElementById("panel-"+visible[0].id).classList.add("active");}
 async function enterApp(){document.getElementById("gate").style.display="none";document.getElementById("mainApp").style.display="block";document.getElementById("roleChip").textContent=(ROLE==="owner"?"Owner":"Staff")+" - Lock";buildTabs();await loadData();renderAll();}
+function checkServerVersion(){const b=document.getElementById("versionBanner");if(!b)return;if(!STATE.serverVersion){b.style.display="block";b.innerHTML="⚠️ Can't confirm backend version — the app may be talking to an old Code.gs. If actions like Close keep failing, re-deploy Code.gs as a NEW version.";return;}if(STATE.serverVersion!==EXPECTED_SCRIPT_VERSION){b.style.display="block";b.innerHTML="⚠️ Backend is OUT OF DATE (running \""+esc(STATE.serverVersion)+"\", app expects \""+esc(EXPECTED_SCRIPT_VERSION)+"\"). Paste the latest Code.gs into the Apps Script project bound to THIS sheet, then Deploy → Manage deployments → edit → Version: New version → Deploy.";return;}b.style.display="none";}
 
 function computeStats(){const closed=STATE.sales.filter(s=>s.stage==="Closed");const totalRevenue=closed.reduce((a,s)=>a+Number(s.finalAmount||0),0);const totalDeposits=STATE.sales.reduce((a,s)=>a+Number(s.deposit||0),0);const balanceOutstanding=STATE.sales.reduce((a,s)=>a+Math.max(0,Number(s.finalAmount||0)-Number(s.deposit||0)),0);const mpesa=STATE.sales.filter(s=>s.paymentMethod==="M-Pesa").reduce((a,s)=>a+Number(s.deposit||0),0);const cash=STATE.sales.filter(s=>s.paymentMethod==="Cash").reduce((a,s)=>a+Number(s.deposit||0),0);const commissionOwed=closed.filter(s=>s.promoCode).reduce((a,s)=>a+Number(s.finalAmount||0)*COMMISSION_RATE,0);const influencerEngagements=STATE.sales.filter(s=>{const p=promoByCode(s.promoCode);return p&&p.category==="Influencer";}).length;return{closedCount:closed.length,openCount:STATE.sales.length-closed.length,totalRevenue,totalDeposits,balanceOutstanding,mpesa,cash,commissionOwed,influencerEngagements};}
 function renderDashboard(){const el=document.getElementById("panel-dashboard");if(ROLE!=="owner"){el.innerHTML="";return;}const s=computeStats();el.innerHTML=`<div style="font-size:11px;color:#8a8a8a;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.4px;">Owner view - full visibility</div><div class="cards"><div class="card"><div class="label">Revenue (closed)</div><div class="value">${money(s.totalRevenue)}</div><div class="sub">${s.closedCount} closed &middot; ${s.openCount} open</div></div><div class="card"><div class="label">Deposits in</div><div class="value">${money(s.totalDeposits)}</div><div class="sub">M-Pesa ${money(s.mpesa)} &middot; Cash ${money(s.cash)}</div></div><div class="card"><div class="label">Balance owed to you</div><div class="value">${money(s.balanceOutstanding)}</div></div><div class="card"><div class="label">Commission owed</div><div class="value">${money(s.commissionOwed)}</div><div class="sub">${STATE.promos.length} codes &middot; ${s.influencerEngagements} influencer jobs</div></div></div><div class="section-title">This month</div>${renderMiniMonth()}<div class="section-title">Top partners</div>${renderPartnerRanking(3)}`;}
