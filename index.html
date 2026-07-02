@@ -112,7 +112,7 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmMMTy7QJ9-1yOGgS_
 // Must match SCRIPT_VERSION in Code.gs. If the backend response doesn't
 // carry this exact string, the live deployment is running older code —
 // this shows a banner instead of leaving you guessing.
-const EXPECTED_SCRIPT_VERSION = "phase1-2026-07-02-e";
+const EXPECTED_SCRIPT_VERSION = "phase1-2026-07-02-f-pipeline-rewire";
 const DISCOUNT_RATE=0.08, COMMISSION_RATE=0.10;
 const CHANNELS=["WhatsApp","Website","Walk-in"];
 const CATEGORIES=["Car Club","Influencer","Staff Referral","Other"];
@@ -282,17 +282,13 @@ let pipeFilter="all";
 function renderPipeline(){const el=document.getElementById("panel-pipeline");const counts={};STAGES.forEach(s=>counts[s]=STATE.sales.filter(x=>x.stage===s).length);let list=[...STATE.sales].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));if(pipeFilter!=="all")list=list.filter(s=>s.stage===pipeFilter);let html=`<div style="font-size:12px;color:#9a9a9a;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.5;">How it works: a new booking starts at <strong style="color:#e8e8e8;">New</strong>. Once a deposit is taken it moves to <strong style="color:var(--warn);">Deposit paid</strong>. Tap <strong style="color:#7aa8ff;">In progress</strong> when work begins, then <strong style="color:var(--lime);">Closed</strong> when the job is done — closing a job always clears its balance to zero.</div><div class="cards">${STAGES.map(st=>`<div class="card" style="cursor:pointer;${pipeFilter===st?'border-color:var(--lime);':''}" onclick="setPipeFilter('${st}')"><div class="label">${STAGE_LABELS[st]}</div><div class="value">${counts[st]}</div></div>`).join("")}</div><button class="btn-outline" style="margin-bottom:12px;" onclick="setPipeFilter('all')">Show all</button>`;if(list.length===0){html+=`<div class="empty">No jobs here yet.</div>`;}else list.forEach(s=>{const p=s.promoCode?promoByCode(s.promoCode):null;const bal=Math.max(0,Number(s.finalAmount)-Number(s.deposit));const paid=bal===0&&Number(s.finalAmount)>0;html+=`<div class="item"><div class="item-top"><div><div style="font-weight:700;font-size:14px;">${esc(s.clientName)}${s.plate?` <span style="color:var(--lime);font-size:12px;">&middot; ${esc(formatPlate(s.plate))}</span>`:""}</div><div style="font-size:11.5px;color:#8a8a8a;margin-top:2px;">${esc(s.service||"-")} &middot; ${esc(s.channel)}</div></div><span class="badge stage-${s.stage}">${STAGE_LABELS[s.stage]}</span></div><div class="stat-row"><span>Total <strong>${money(s.finalAmount)}</strong></span><span>Deposit <strong>${money(s.deposit)}</strong></span><span>Balance <strong style="color:${paid?'var(--lime)':bal>0?'var(--warn)':'#fff'};">${paid?"PAID IN FULL":money(bal)}</strong></span></div>${s.promoCode?`<div style="font-size:11.5px;color:var(--lime);margin-top:6px;">Promo: ${esc(s.promoCode)} (${esc(p?p.owner:"unlinked")})</div>`:""}<div class="stage-steps">${STAGES.map(st=>`<div class="stage-step ${STAGES.indexOf(st)<=STAGES.indexOf(s.stage)?'done':''}" onclick="moveStage('${s.id}','${st}')">${STAGE_LABELS[st]}</div>`).join("")}</div><div style="display:flex;gap:8px;margin-top:10px;"><button class="btn-outline" style="flex:1;" onclick="makeReceipt('${s.id}')">Receipt</button>${ROLE==="owner"?`<button class="btn-outline" style="color:var(--danger);" onclick="deleteSale('${s.id}')">Delete</button>`:""}</div></div>`;});el.innerHTML=html;}
 function setPipeFilter(f){pipeFilter=f;renderPipeline();}
 async function moveStage(id,stage){
-  if(BUSY)return;BUSY=true;
+  if(BUSY)return;
+  if(stage==="Closed"&&!confirm("Close this job? The full balance will be marked as paid."))return;
+  BUSY=true;
   try{
-    if(stage==="Closed"){
-      if(!confirm("Close this job? The full balance will be marked as paid."))  { BUSY=false; return; }
-      const res=await api("markPaid",{id});
-      if(!res||res.ok!==true){showToast("Close failed: "+(res&&(res.error||res.message)?(res.error||res.message):"no response from server — id:"+id),true);BUSY=false;return;}
-      await loadData();showToast("Closed & paid in full");renderAll();BUSY=false;return;
-    }
     const res=await api("setStage",{id,stage});
-    if(!res||res.ok!==true){showToast("Update failed: "+(res&&(res.error||res.message)?(res.error||res.message):"no response from server"),true);BUSY=false;return;}
-    await loadData();showToast("Moved to "+STAGE_LABELS[stage]);renderAll();
+    if(!res||res.ok!==true){showToast((stage==="Closed"?"Close failed: ":"Update failed: ")+(res&&(res.error||res.message)?(res.error||res.message):"no response from server"),true);return;}
+    await loadData();showToast(stage==="Closed"?"Closed & paid in full":"Moved to "+STAGE_LABELS[stage]);renderAll();
   }catch(e){showToast("Update failed: "+(e&&e.message?e.message:String(e)),true);}finally{BUSY=false;}
 }
 async function deleteSale(id){if(BUSY)return;if(!confirm("Delete this reservation?"))return;BUSY=true;try{await api("deleteSale",{id});await loadData();renderAll();}catch(e){showToast("Failed - try again",true);}finally{BUSY=false;}}
