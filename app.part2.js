@@ -214,24 +214,29 @@ Object.assign(Wa,{
       <button class="btn-2" style="width:100%;margin-top:12px" onclick="closeModal()">Close</button>`);
   },
   phone(c){ const sel=$("wa_phone"); return sel?sel.value:c.primaryPhone; },
+  wrap(inner){ return `✦ *GLOSSMITH* ✦\n_Premium Automotive Detailing_\n━━━━━━━━━━━━━━━\n${inner}\n━━━━━━━━━━━━━━━\n_app.glossmith.com_`; },
   msg(type,j,c,v){
-    const car=[v.make,v.model].filter(Boolean).join(" ")+" ("+fmtPlate(v.plate)+")";
-    const bal=j.balance>0?money(j.balance):"nil — paid in full";
+    const car=[v.make,v.model].filter(Boolean).join(" ")+" · "+fmtPlate(v.plate);
+    const bal=j.balance>0?money(j.balance):"Paid in full ✓";
+    const hi=`Dear ${c.name||"valued client"},`;
     switch(type){
-      case "jobcard": return `Hello ${c.name||""}, here is your Glossmith job card.\n\nJob: ${j.jobNo}\nVehicle: ${car}\nServices: ${j.services}\n\nTotal: ${money(j.finalAmount)}\nPaid: ${money(j.totalPaid)}\nBalance: ${bal}\n\nThank you for choosing Glossmith.`;
-      case "receipt": return `Glossmith receipt — ${j.jobNo}\n\n${j.services}\nTotal: ${money(j.finalAmount)}\nPaid: ${money(j.totalPaid)}\nBalance: ${bal}\n\nWe appreciate your business. ✨`;
-      case "inprogress": return `Hello ${c.name||""}, good news — work has started on your ${car} at Glossmith. 🔧✨\n\nService: ${j.services}\nWe'll let you know the moment it's ready for collection.\n\nGlossmith`;
-      case "ready": return `Hello ${c.name||""}, your ${car} is ready for collection at Glossmith! 🚗✨\n\nOutstanding balance: ${bal}.\nSee you soon.`;
-      case "completed": return `Hello ${c.name||""}, the work on your ${car} is complete. ${j.services}.\n\nBalance: ${bal}. Thank you for trusting Glossmith.`;
-      case "payment": return `Payment confirmed — thank you ${c.name||""}!\n\nJob ${j.jobNo} · ${car}\nPaid to date: ${money(j.totalPaid)}\nBalance: ${bal}\n\nGlossmith`;
-      case "photos": { const urls=(j.photos||[]).map(p=>p.url); return `Hello ${c.name||""}, progress photos for your ${car}:\n\n`+(urls.length?urls.join("\n"):"(photos will be shared shortly)")+`\n\nGlossmith`; }
+      case "jobcard": return this.wrap(`${hi}\n\nYour job card:\n\n*Job* ${j.jobNo}\n*Vehicle* ${car}\n*Service* ${j.services}\n\nTotal   ${money(j.finalAmount)}\nPaid    ${money(j.totalPaid)}\n*Balance*  ${bal}\n\nIt is our pleasure to care for your vehicle.`);
+      case "receipt": return this.wrap(`${hi}\n\n*RECEIPT* · ${j.jobNo}\n\n${j.services}\n\nTotal   ${money(j.finalAmount)}\nPaid    ${money(j.totalPaid)}\n*Balance*  ${bal}\n\nWith gratitude for your business.`);
+      case "inprogress": return this.wrap(`${hi}\n\nWork has now *begun* on your ${car}. 🔧\n\n_${j.services}_\n\nYour vehicle is in expert hands — we'll notify you the moment it's ready.`);
+      case "ready": return this.wrap(`${hi}\n\nYour ${car} is *ready for collection*. 🚗✨\n\n${j.balance>0?`Outstanding balance: *${money(j.balance)}*`:`Fully settled — nothing to pay.`}\n\nWe look forward to welcoming you.`);
+      case "completed": return this.wrap(`${hi}\n\nThe work on your ${car} is *complete*.\n\n_${j.services}_\n\n${j.balance>0?`Balance: *${money(j.balance)}*`:`Paid in full — thank you.`}\n\nIt was a privilege to serve you.`);
+      case "payment": return this.wrap(`${hi}\n\n*Payment confirmed* ✓ — thank you.\n\n*Job* ${j.jobNo} · ${car}\nPaid to date  ${money(j.totalPaid)}\n*Balance*  ${bal}`);
+      case "photos": { const link=this.photoLink(j); return this.wrap(`${hi}\n\nProgress on your ${car}: 📸\n\n${link||"(photos will follow shortly)"}\n\nCrafted with care by Glossmith.`); }
       default: return "";
     }
   },
+  // One link for all a job's photos (Drive folder if available, else the newest photo URL).
+  photoLink(j){ const ph=(j.photos||[]); if(!ph.length)return ""; if(j.photoFolderUrl)return j.photoFolderUrl; return ph.map(p=>p.url).join("\n"); },
   open(digits,msg){ const enc=encodeURIComponent(msg); const url=isMobile()?`https://wa.me/${digits}?text=${enc}`:`https://web.whatsapp.com/send?phone=${digits}&text=${enc}`; window.open(url,"_blank"); },
   // Auto-prepare a message to the customer's PRIMARY number (used on stage change).
   auto(jobId,type){
     const j=State.job(jobId); if(!j)return; const c=State.customer(j.customerId)||{}; const v=State.vehicle(j.vehicleId)||{};
+    if(/maintenance club/i.test(j.services||"")){ return; } // membership subscriptions don't get progress/ready pings
     const digits=waDigits(c.primaryPhone); if(!digits){ toast("Stage updated — no phone on file to message",false); return; }
     this.open(digits,this.msg(type,j,c,v));
     toast(type==="ready"?"Opening 'ready for collection' WhatsApp…":"Opening 'work started' WhatsApp…");
@@ -260,7 +265,31 @@ Object.assign(Pdf,{
       .grid{display:flex;flex-wrap:wrap;gap:6px;} .grid img{width:31.5%;height:120px;object-fit:cover;border-radius:6px;}
       .foot{margin-top:26px;display:flex;justify-content:space-between;align-items:flex-end;} .qr{text-align:center;font-size:10px;color:#888;}
       ul{margin:6px 0;padding-left:18px;font-size:13px;} .badge{display:inline-block;background:#0d0d0d;color:#B8FF00;font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;}
-    </style></head><body>${body}<script>setTimeout(function(){window.print();},500);<\/script></body></html>`;
+    </style></head><body>${body}</body></html>`;
+  },
+  // Luxury receipt aesthetic — narrow ticket, refined serif, hairline rules.
+  receiptShell(title,body){
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      @page{margin:0;} *{box-sizing:border-box;}
+      body{background:#e9e7e2;margin:0;padding:22px 12px;font-family:'JetBrains Mono',monospace;color:#1a1a1a;}
+      .ticket{max-width:360px;margin:auto;background:#fff;padding:30px 26px 26px;box-shadow:0 10px 40px rgba(0,0,0,.14);position:relative;}
+      .ticket:before,.ticket:after{content:"";position:absolute;left:0;right:0;height:10px;background-image:radial-gradient(circle at 6px -2px, transparent 6px, #fff 6px);background-size:16px 10px;}
+      .ticket:before{top:-9px;transform:rotate(180deg);} .ticket:after{bottom:-9px;}
+      .r-logo{width:46px;height:46px;border-radius:12px;background:#0d0d0d;color:#B8FF00;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px;font-family:Arial;margin:0 auto 12px;}
+      .r-brand{text-align:center;font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;letter-spacing:.5px;line-height:1;}
+      .r-tag{text-align:center;font-size:9.5px;letter-spacing:3px;text-transform:uppercase;color:#8a8a8a;margin:6px 0 18px;}
+      .r-rule{border:none;border-top:1px dashed #cfccc6;margin:14px 0;}
+      .r-meta{font-size:10.5px;color:#555;line-height:1.7;letter-spacing:.3px;}
+      .r-title{text-align:center;font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:4px;text-transform:uppercase;color:#0d0d0d;margin:16px 0 10px;}
+      .r-line{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:5px 0;letter-spacing:.2px;}
+      .r-line .lbl{color:#555;} .r-tot{border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;padding:9px 0;margin:8px 0;font-weight:500;}
+      .r-tot .val{font-size:14px;} .paid{color:#2f7d2f;} .due{color:#b56a15;}
+      .r-foot{text-align:center;font-family:'Cormorant Garamond',serif;font-size:16px;margin-top:20px;color:#0d0d0d;}
+      .r-qr{text-align:center;margin-top:14px;} .r-thanks{text-align:center;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#999;margin-top:6px;}
+    </style></head><body><div class="ticket">${body}</div></body></html>`;
   },
   header(j,c,v,sub){
     return `<div class="hd"><div style="display:flex;gap:12px;align-items:center"><div class="logo">G</div><div><div class="brand">Gloss<span>mith</span></div><div class="muted">Premium automotive detailing</div></div></div>
@@ -282,7 +311,26 @@ Object.assign(Pdf,{
     </table>
     ${(j.payments||[]).length?`<h2>Payment history</h2><table>${j.payments.map(p=>`<tr><td>${shortDate(p.createdAt)} · ${esc(p.method)} ${p.mpesaCode?"· "+esc(p.mpesaCode):""}<br><span class="muted">${esc(p.kind||"")}</span></td><td style="text-align:right">${money(p.amount)}</td></tr>`).join("")}</table>`:""}`;
   },
-  print(html){ const w=window.open("","_blank"); if(!w){ toast("Allow pop-ups to export PDF",true); return; } w.document.write(html); w.document.close(); },
+  print(html){ this.overlay(html); },
+  // In-app viewer — works inside an iOS home-screen PWA (window.open does not).
+  overlay(html){
+    closeModal();
+    const wrap=document.createElement("div");
+    wrap.id="pdfOverlay";
+    wrap.style.cssText="position:fixed;inset:0;z-index:300;background:#0d0d0d;display:flex;flex-direction:column;";
+    wrap.innerHTML=`
+      <div style="display:flex;gap:8px;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:#141414;border-bottom:1px solid #262626;flex:0 0 auto">
+        <button onclick="Pdf.close()" style="background:none;border:1px solid #333;color:#f4f4f4;border-radius:10px;padding:9px 14px;font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer">✕ Close</button>
+        <div style="flex:1"></div>
+        <button onclick="Pdf.doPrint()" style="background:#B8FF00;border:none;color:#0d0d0d;border-radius:10px;padding:9px 16px;font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer">🖨 Print / Save PDF</button>
+      </div>
+      <iframe id="pdfFrame" style="flex:1;width:100%;border:none;background:#fff"></iframe>`;
+    document.body.appendChild(wrap);
+    const f=wrap.querySelector("#pdfFrame");
+    const doc=f.contentWindow.document; doc.open(); doc.write(html); doc.close();
+  },
+  close(){ const o=$("pdfOverlay"); if(o)o.remove(); },
+  doPrint(){ const f=$("pdfFrame"); if(!f)return; try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ toast("Use your browser's Share ▸ Print",true); } },
   jobCard(id){
     const j=State.job(id); const c=State.customer(j.customerId)||{}; const v=State.vehicle(j.vehicleId)||{};
     const photos={before:[],during:[],after:[]}; (j.photos||[]).forEach(p=>{(photos[p.phase]||photos.before).push(p);});
@@ -298,9 +346,29 @@ Object.assign(Pdf,{
   },
   receipt(id){
     const j=State.job(id); const c=State.customer(j.customerId)||{}; const v=State.vehicle(j.vehicleId)||{};
-    const body=this.header(j,c,v,"Receipt")+this.finance(j)+
-      `<div class="foot"><div class="muted">Glossmith · app.glossmith.com<br>Payment method: ${esc((j.payments||[]).map(p=>p.method).join(", ")||"—")}</div>${this.qr(j)}</div>`;
-    this.print(this.shell("Receipt "+(j.jobNo||""),body));
+    const qrData=encodeURIComponent("Glossmith "+(j.jobNo||"")+" | "+money(j.finalAmount)+" | bal "+money(j.balance));
+    const body=`
+      <div class="r-logo">G</div>
+      <div class="r-brand">Glossmith</div>
+      <div class="r-tag">Premium Automotive Detailing</div>
+      <hr class="r-rule">
+      <div class="r-meta">
+        RECEIPT &nbsp;·&nbsp; ${esc(j.jobNo||"")}<br>
+        ${new Date(j.createdAt).toLocaleString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}<br>
+        ${esc(c.name||"—")} · ${esc(normPhoneIntl(c.primaryPhone))}<br>
+        ${esc([v.make,v.model].filter(Boolean).join(" "))} · ${esc(fmtPlate(v.plate))||"no plate"}
+      </div>
+      <div class="r-title">Statement</div>
+      <div class="r-line"><span class="lbl">${esc(j.services||"Service")}</span><span>${money(j.amount)}</span></div>
+      ${num(j.discount)>0?`<div class="r-line"><span class="lbl">Discount</span><span>−${money(j.discount)}</span></div>`:""}
+      <div class="r-line r-tot"><span>TOTAL</span><span class="val">${money(j.finalAmount)}</span></div>
+      <div class="r-line"><span class="lbl">Paid</span><span>${money(j.totalPaid)}</span></div>
+      <div class="r-line"><span class="lbl">Balance</span><span class="${j.balance>0?"due":"paid"}">${j.balance>0?money(j.balance):"PAID IN FULL"}</span></div>
+      ${(j.payments||[]).length?`<hr class="r-rule"><div class="r-meta">${j.payments.map(p=>`${shortDate(p.createdAt)} · ${esc(p.method)}${p.mpesaCode?" · "+esc(p.mpesaCode):""} — ${money(p.amount)}`).join("<br>")}</div>`:""}
+      <div class="r-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}" width="86" height="86"></div>
+      <div class="r-foot">Thank you.</div>
+      <div class="r-thanks">app.glossmith.com</div>`;
+    this.overlay(this.receiptShell("Receipt "+(j.jobNo||""),body));
   }
 });
 
@@ -358,12 +426,13 @@ Object.assign(More,{
     </div>
     <div class="section-title">View partner</div>
     <select id="pt_view" style="margin-bottom:12px"><option value="">All partners</option>${partners.map(p=>`<option value="${esc(p.code)}" ${this.partnerSel===p.code?"selected":""}>${esc(p.partner)} (${esc(p.code)})</option>`).join("")}</select>
-    ${viewList.length?viewList.map(p=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700">${esc(p.partner)}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(p.code)}${p.club?" · "+esc(p.club):""} · ${Math.round(p.rate*100)}% commission</div></div><span class="chip">${p.jobs} job${p.jobs===1?"":"s"}</span></div>
+    ${viewList.length?viewList.map(p=>`<div class="card" style="${p.active===false?"opacity:.55":""}"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700">${esc(p.partner)} ${p.active===false?`<span class="chip danger" style="margin-left:4px">Inactive</span>`:""}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(p.code)}${p.club?" · "+esc(p.club):""} · ${Math.round(p.rate*100)}% commission</div></div><span class="chip">${p.jobs} job${p.jobs===1?"":"s"}</span></div>
       <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12.5px;flex-wrap:wrap;gap:6px">
         <span>Revenue <strong>${money(p.revenue)}</strong></span>
         <span>Earned <strong>${money(p.commissionAccrued)}</strong></span>
         <span>Paid <strong>${money(p.paid)}</strong></span>
-        <span>Owed <strong style="color:${p.owed>0?"var(--warn)":"var(--lime)"}">${money(p.owed)}</strong></span></div></div>`).join(""):`<div class="empty">No partner activity yet.</div>`}
+        <span>Owed <strong style="color:${p.owed>0?"var(--warn)":"var(--lime)"}">${money(p.owed)}</strong></span></div>
+      ${can("deleteJobs")&&p.id?`<div class="btn-row" style="margin-top:10px"><button class="btn-2" onclick="More.togglePartner('${p.id}',${p.active===false})">${p.active===false?"Reactivate":"Deactivate"}</button><button class="btn-2" style="color:var(--danger);border-color:rgba(224,112,104,0.3)" onclick="More.delPartner('${p.id}')">Delete</button></div>`:""}</div>`).join(""):`<div class="empty">No partner activity yet.</div>`}
 
     <div class="section-title">Pay commission</div>
     <div style="max-width:520px">
@@ -385,6 +454,8 @@ Object.assign(More,{
     });
   },
   async delPayout(id){ if(!confirm("Delete this payout? It will increase the amount owed again."))return; await act(async()=>{ const res=await Api.call("deleteCommissionPayment",{id}); if(!handle(res))return; await Api.load(); toast("Payout deleted"); this.set("partners"); }); },
+  async togglePartner(id,reactivate){ if(!reactivate && !confirm("Deactivate this partner? Their code will stop applying discounts/commission, but history stays."))return; await act(async()=>{ const res=await Api.call("setPromoActive",{id,active:reactivate}); if(!handle(res))return; await Api.load(); toast(reactivate?"Partner reactivated":"Partner deactivated"); this.set("partners"); }); },
+  async delPartner(id){ if(!confirm("Delete this partner/influencer permanently? Their promo code will be removed."))return; await act(async()=>{ const res=await Api.call("deletePromo",{id}); if(!handle(res))return; await Api.load(); toast("Partner deleted"); this.set("partners"); }); },
   /* --- reports --- */
   reports(){
     const jobs=State.jobs(); const d=State.snapshot.dashboard||{};
@@ -538,8 +609,19 @@ Object.assign(More,{
       </div>
       <div class="section-title">Accounts</div>
       ${State.demo?`<div class="hint warn">In demo mode accounts are stored on this device only.</div>`:""}
-      ${users.length?users.map(u=>this.userCard(u)).join(""):`<div class="empty">No accounts.</div>`}`;
+      ${users.length?users.map(u=>this.userCard(u)).join(""):`<div class="empty">No accounts.</div>`}
+      <div class="section-title">🔒 Device security</div>
+      <div class="hint">Devices are blocked automatically after 5 wrong sign-ins. Blocked devices can't access the app until you clear them here. (Browsers report a device type + browser, not the exact model.)</div>
+      ${this.deviceList()}`;
   },
+  deviceList(){
+    const devices=(State.snapshot.devices||[]).slice().sort((a,b)=>new Date(b.lastAttempt||b.createdAt)-new Date(a.lastAttempt||a.createdAt));
+    if(!devices.length)return `<div class="empty">No sign-in activity recorded yet.</div>`;
+    return devices.map(d=>{const blocked=d.status==="blocked";return `<div class="card" style="${blocked?"border-color:rgba(224,112,104,0.4)":""}"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:13.5px">${esc(d.label||"Unknown device")}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${num(d.failedCount)} failed · last ${esc(d.lastUser||"—")} · ${shortDate(d.lastAttempt)}</div></div><span class="chip ${blocked?"danger":"lime"}">${blocked?"⛔ Blocked":"Active"}</span></div>
+      <div class="btn-row" style="margin-top:10px">${blocked?`<button class="btn-2" style="color:var(--lime);border-color:rgba(184,255,0,0.4)" onclick="More.clearDevice('${d.id}')">Clear &amp; allow retry</button>`:`<button class="btn-2" onclick="More.blockDevice('${d.id}')">Block this device</button>`}</div></div>`;}).join("");
+  },
+  async clearDevice(id){ await act(async()=>{ const res=await Api.call("clearDevice",{id}); if(!handle(res))return; await Api.load(); toast("Device cleared"); this.set("accounts"); }); },
+  async blockDevice(id){ if(!confirm("Block this device from signing in?"))return; await act(async()=>{ const res=await Api.call("blockDevice",{id}); if(!handle(res))return; await Api.load(); toast("Device blocked"); this.set("accounts"); }); },
   userCard(u){
     const me=State.username&&String(State.username).toLowerCase()===String(u.username).toLowerCase();
     const revoked=u.active===false;
@@ -689,7 +771,11 @@ Object.assign(Demo,{
     ];
     const members=[{id:"mem00001",customerId:c1.id,name:"Wanjiru Kamau",phone:"+254722112233",club:"Glossmith Club",source:"manual",promoCode:"",discountRate:0.05,addedBy:"owner",active:true,createdAt:iso(now-86400000*40)}];
     const commissionPayments=[{id:"cpay0001",promoCode:"NAIROBICLUB",partner:"Nairobi Car Club",amount:2000,mpesaCode:"QGX1PAYAB",note:"June payout",paidBy:"owner",createdAt:iso(now-86400000*12)}];
-    return {customers:[c1,c2,c3],vehicles:[v1,v2,v3,v4],jobs,payments,photos:[],notes,promos,staff,users,expenses,members,commissionPayments,mpesa:[]};
+    const requests=[
+      {id:"req00001",name:"Brian Otieno",phone:"+254701234567",vehicle:"2021 Subaru Outback",make:"Subaru",model:"Outback",year:"2021",vehicleClass:1,services:"Gold — Complete Detail + Ceramic 10H",amount:81560,preferredDate:iso(now+86400000*2).slice(0,10),preferredTime:"10:00",notes:"Slight swirl marks on bonnet.",promoCode:"",status:"pending",source:"website",createdAt:iso(now-3600000*3)},
+      {id:"req00002",name:"Fatuma Ali",phone:"+254712987654",vehicle:"2019 Mazda Demio",make:"Mazda",model:"Demio",year:"2019",vehicleClass:0,services:"Silver — Household Detail",amount:20000,preferredDate:iso(now+86400000*1).slice(0,10),preferredTime:"14:30",notes:"",promoCode:"NAIROBICLUB",status:"pending",source:"website",createdAt:iso(now-3600000*8)}
+    ];
+    return {customers:[c1,c2,c3],vehicles:[v1,v2,v3,v4],jobs,payments,photos:[],notes,promos,staff,users,expenses,members,commissionPayments,requests,mpesa:[]};
   },
   /* --- compute (mirror of backend) --- */
   computeJob(job){
@@ -723,11 +809,14 @@ Object.assign(Demo,{
     if(!db.expenses)db.expenses=[];
     if(!db.members)db.members=[];
     if(!db.commissionPayments)db.commissionPayments=[];
+    if(!db.requests)db.requests=[];
+    if(!db.devices)db.devices=[];
     const jobs=db.jobs.map(j=>this.computeJob(j));
     return {version:EXPECTED_BACKEND,build:"demo",environment:"demo",timestamp:this.now(),
       customers:db.customers,vehicles:db.vehicles,jobs:jobs,
       promos:db.promos,staff:db.staff,expenses:db.expenses,access:ACCESS_FALLBACK,
       members:db.members,commissionPayments:db.commissionPayments,partners:this.partners(jobs),
+      requests:(db.requests||[]).filter(r=>r.status!=="approved"),devices:db.devices||[],
       users:db.users.map(u=>({id:u.id,username:u.username,role:u.role,active:u.active!==false,protected:u.protected===true||String(u.username).trim().toLowerCase()==="owner"})),
       dashboard:this.dashboard(),accounting:this.accounting(jobs)};
   },
@@ -735,7 +824,7 @@ Object.assign(Demo,{
   memberByPhone(phone){ const np=normPhoneIntl(phone); if(!np)return null; return (this.db.members||[]).find(m=>m.active!==false&&normPhoneIntl(m.phone)===np)||null; },
   partners(jobs){
     const db=this.db; const byCode={};
-    (db.promos||[]).forEach(p=>{ byCode[String(p.code).toUpperCase()]={code:p.code,partner:p.owner||p.code,club:p.club||"",rate:this.promoRate(p),discountRate:num(p.discountRate),jobs:0,revenue:0,commissionAccrued:0,paid:0,owed:0}; });
+    (db.promos||[]).forEach(p=>{ byCode[String(p.code).toUpperCase()]={id:p.id,active:p.active!==false,code:p.code,partner:p.owner||p.code,club:p.club||"",rate:this.promoRate(p),discountRate:num(p.discountRate),jobs:0,revenue:0,commissionAccrued:0,paid:0,owed:0}; });
     jobs.forEach(j=>{ if(!j.promoCode)return; const e=byCode[String(j.promoCode).toUpperCase()]; if(!e)return; e.jobs++; if(j.balance<=0&&j.finalAmount>0){ e.revenue+=j.finalAmount; e.commissionAccrued+=Math.round(j.finalAmount*e.rate); } });
     (db.commissionPayments||[]).forEach(c=>{ const e=byCode[String(c.promoCode).toUpperCase()]; if(e)e.paid+=num(c.amount); });
     return Object.keys(byCode).map(k=>{const e=byCode[k];e.owed=Math.max(0,e.commissionAccrued-e.paid);return e;}).sort((a,b)=>b.revenue-a.revenue);
@@ -766,6 +855,7 @@ Object.assign(Demo,{
     var capOf={deleteJob:"deleteJobs",deletePhoto:"deleteJobs",deletePromo:"deleteJobs",deleteStaff:"deleteJobs",
       addPromo:"financials",addStaff:"accounting",updateStaff:"accounting",addExpense:"manageExpenses",deleteExpense:"manageExpenses",
       deleteMember:"deleteJobs",payCommission:"viewPartners",deleteCommissionPayment:"deleteJobs",
+      clearDevice:"manageAccounts",blockDevice:"manageAccounts",
       addUser:"manageAccounts",updateUser:"manageAccounts",deleteUser:"manageAccounts"};
     if(capOf[action] && State.role){ var A=ACCESS_FALLBACK[State.role]||ACCESS_FALLBACK.sales; if(!A[capOf[action]]) return this.fail("You don't have permission for that.","FORBIDDEN"); }
     switch(action){
@@ -777,12 +867,29 @@ Object.assign(Demo,{
       }
       case "login": {
         if(!db.users||!db.users.length)db.users=this.seed().users;
+        if(!db.devices)db.devices=[];
+        let dev=p.deviceId?db.devices.find(d=>d.deviceId===p.deviceId):null;
+        if(dev&&dev.status==="blocked")return this.fail("This device is blocked after too many failed sign-ins. Ask the owner to clear it.","BLOCKED");
         const u=String(p.username||"").trim().toLowerCase();
         const user=db.users.find(x=>String(x.username).trim().toLowerCase()===u);
-        if(!user||String(user.password)!==String(p.password))return this.fail("Wrong username or password","AUTH");
+        const okCreds=user&&String(user.password)===String(p.password);
+        if(!okCreds){
+          if(p.deviceId){
+            if(!dev){dev={id:this.uuid(),deviceId:p.deviceId,label:p.deviceLabel||"Unknown device",failedCount:0,status:"active",lastAttempt:this.now(),lastUser:p.username||"",createdAt:this.now()};db.devices.push(dev);}
+            dev.failedCount=num(dev.failedCount)+1; dev.lastAttempt=this.now(); dev.lastUser=p.username||""; dev.label=p.deviceLabel||dev.label;
+            if(dev.failedCount>=5){dev.status="blocked";this.save();return this.fail("Too many failed attempts — this device is now blocked. Ask the owner to clear it.","BLOCKED");}
+            this.save(); return this.fail("Wrong username or password ("+(5-dev.failedCount)+" attempts left).","AUTH");
+          }
+          return this.fail("Wrong username or password","AUTH");
+        }
         if(user.active===false)return this.fail("This account has been revoked. Contact the owner.","REVOKED");
+        if(dev){dev.failedCount=0;dev.status="active";dev.lastAttempt=this.now();dev.lastUser=user.username;dev.label=p.deviceLabel||dev.label;}
+        else if(p.deviceId){db.devices.push({id:this.uuid(),deviceId:p.deviceId,label:p.deviceLabel||"Unknown device",failedCount:0,status:"active",lastAttempt:this.now(),lastUser:user.username,createdAt:this.now()});}
+        this.save();
         return this.ok("Signed in",null,{role:user.role,username:user.username,token:"demo-token"});
       }
+      case "clearDevice": { const d=(db.devices||[]).find(x=>x.id===p.id); if(d){d.failedCount=0;d.status="active";} this.save(); return this.ok("Device cleared"); }
+      case "blockDevice": { const d=(db.devices||[]).find(x=>x.id===p.id); if(d)d.status="blocked"; this.save(); return this.ok("Device blocked"); }
       case "addUser": {
         const username=String(p.username||"").trim();
         if(!username)return this.fail("Username is required.","VALIDATION");
@@ -827,9 +934,13 @@ Object.assign(Demo,{
       case "deleteMember": { db.members=(db.members||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Member removed"); }
       case "payCommission": { const code=String(p.promoCode||"").trim().toUpperCase(); const promo=db.promos.find(x=>String(x.code).toUpperCase()===code); if(!promo)return this.fail("Choose a partner to pay.","VALIDATION"); if(num(p.amount)<=0)return this.fail("Enter an amount greater than zero.","VALIDATION"); if(!String(p.mpesaCode||"").trim())return this.fail("Enter the M-Pesa code you paid with.","VALIDATION"); const row={id:this.uuid(),promoCode:promo.code,partner:promo.owner||promo.code,amount:num(p.amount),mpesaCode:String(p.mpesaCode).toUpperCase(),note:p.note||"",paidBy:State.username||"",createdAt:this.now()}; db.commissionPayments.push(row); this.save(); return this.ok("Commission payment recorded",row); }
       case "deleteCommissionPayment": { db.commissionPayments=(db.commissionPayments||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
+      case "webBooking": { if(!String(p.name||"").trim()||!String(p.phone||"").trim())return this.fail("Name and phone are required.","VALIDATION"); if(!db.requests)db.requests=[]; const row={id:this.uuid(),name:String(p.name).trim(),phone:normPhoneIntl(p.phone),vehicle:p.vehicle||"",make:p.make||"",model:p.model||"",year:p.year||"",vehicleClass:num(p.vehicleClass),services:p.services||"",amount:num(p.amount),preferredDate:p.preferredDate||"",preferredTime:p.preferredTime||"",notes:p.notes||"",promoCode:p.promoCode||"",status:"pending",source:p.source||"website",createdAt:this.now()}; db.requests.push(row); this.save(); return this.ok("Booking received",row,{requestId:row.id}); }
+      case "deleteRequest": { db.requests=(db.requests||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Request removed"); }
+      case "approveRequest": { const r=(db.requests||[]).find(x=>x.id===p.id); if(r)r.status="approved"; this.save(); return this.ok("Request approved"); }
       case "addExpense": { if(num(p.amount)<=0)return this.fail("Expense amount must be greater than zero.","VALIDATION"); if(!String(p.category||"").trim())return this.fail("Choose a category.","VALIDATION"); if(!db.expenses)db.expenses=[]; const row={id:this.uuid(),date:p.date||this.now().slice(0,10),category:p.category,description:p.description||"",amount:num(p.amount),method:p.method||"Cash",recurring:p.recurring||"one-off",loggedBy:p.loggedBy||"",createdAt:this.now()}; db.expenses.push(row); this.save(); return this.ok("Expense recorded",row); }
       case "deleteExpense": { db.expenses=(db.expenses||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
       case "deletePromo": { db.promos=db.promos.filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
+      case "setPromoActive": { const pr=db.promos.find(x=>x.id===p.id); if(pr)pr.active=p.active!==false; this.save(); return this.ok(p.active!==false?"Partner reactivated":"Partner deactivated"); }
       case "addStaff": { const row={id:this.uuid(),name:String(p.name).trim(),rate:num(p.rate)||0.10,createdAt:this.now()}; db.staff.push(row); this.save(); return this.ok("Staff added",row); }
       case "updateStaff": { const s=db.staff.find(x=>x.id===p.id); if(!s)return this.fail("Not found","NOT_FOUND"); if(p.name!==undefined)s.name=String(p.name).trim(); if(p.rate!==undefined)s.rate=num(p.rate); this.save(); return this.ok("Staff updated",s); }
       case "deleteStaff": { db.staff=db.staff.filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
@@ -854,8 +965,8 @@ Object.assign(Demo,{
     const existingMember=this.memberByPhone(phone);
     if(existingMember)effRate=Math.max(effRate,num(existingMember.discountRate));
     let promo=null;
-    if(p.promoCode){ promo=db.promos.find(x=>String(x.code).toUpperCase()===String(p.promoCode).toUpperCase()); if(promo){promoCode=promo.code;effRate=Math.max(effRate,num(promo.discountRate));} }
-    finalAmount=amount>0?Math.round(amount*(1-effRate)):finalAmount;
+    if(p.promoCode){ promo=db.promos.find(x=>String(x.code).toUpperCase()===String(p.promoCode).toUpperCase()&&x.active!==false); if(promo){promoCode=promo.code;effRate=Math.max(effRate,num(promo.discountRate));} }
+    finalAmount=amount>0?Math.max(0,amount-Math.round((p.discountBase!==undefined?num(p.discountBase):amount)*effRate)):finalAmount;
     const discount=Math.max(0,amount-finalAmount);
     if(num(p.deposit)>finalAmount)return this.fail("Deposit cannot exceed the total.","VALIDATION");
     const deposit=num(p.deposit);

@@ -132,7 +132,7 @@
   <div class="gate-sub">Sign in to continue</div>
   <form id="loginForm" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:2px;" onsubmit="return false;">
     <label style="color:#9a9a9a">Username<input id="lg_user" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. sales"></label>
-    <label style="color:#9a9a9a">Password<input id="lg_pass" type="password" autocomplete="current-password" placeholder="••••••••"></label>
+    <label style="color:#9a9a9a">Password<span style="position:relative;display:block"><input id="lg_pass" type="password" autocomplete="current-password" placeholder="••••••••" style="padding-right:46px"><button type="button" id="lg_eye" aria-label="Show password" onclick="Auth.toggleEye()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:8px;color:var(--muted);display:flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
     <button class="btn" id="lg_btn" style="margin-top:8px" type="submit">Sign in</button>
   </form>
   <div class="gate-err" id="gateErr"></div>
@@ -155,7 +155,7 @@
 <div id="toast"></div>
 <div id="modalRoot"></div>
 
-<script src="catalog.js?v=7.5.1"></script>
+<script src="catalog.js?v=7.6.1"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -163,8 +163,8 @@
    The BACKEND is the source of truth. This layer never computes
    balances, totals or status — it renders server-computed jobs.
    ============================================================ */
-const APP_VERSION = "7.5.1";
-const EXPECTED_BACKEND = "v7.5.0";
+const APP_VERSION = "7.6.1";
+const EXPECTED_BACKEND = "v7.6.0";
 const STAGES = ["New","Deposit Paid","In Progress","Ready for Collection","Closed"];
 const ACCESS_FALLBACK = {
   owner:   { financials:true, accounting:true, commissions:true, deleteJobs:true, manageAccounts:true, manageExpenses:true, viewReports:true, revenue:true, viewProfit:true, viewPartners:true },
@@ -187,6 +187,13 @@ const COSTS = {
   problem:{ wash:[700,910], swirls:[750,974], glass:[3474,4516], smell:[1738,2259], newcar:[4467,5808] }
 };
 function costFor(gid,iid,fid,vc){ const g=COSTS[gid]; if(!g)return 0; const it=g[iid]; if(it===undefined)return 0; if(gid==="ppf"||gid==="tint")return it[fid]||0; return it[vc]||it[0]||0; }
+/* Membership billing periods — "Membership Savings" on upfront terms. */
+const MEMBER_PERIODS=[
+  {id:"monthly",label:"Monthly",months:1,save:0},
+  {id:"quarterly",label:"Quarterly",months:3,save:0.025},
+  {id:"half",label:"Half-year",months:6,save:0.05},
+  {id:"annual",label:"Annual",months:12,save:0.10},
+];
 
 /* ===================== UTIL ===================== */
 const $ = id => document.getElementById(id);
@@ -199,6 +206,13 @@ function normPhoneIntl(phone){ let d=String(phone||"").replace(/\D/g,""); if(d.i
 const waDigits = phone => normPhoneIntl(phone).replace(/\D/g,"");
 const shortDate = d => d ? String(d).slice(0,10) : "—";
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+function deviceId(){ try{ let d=localStorage.getItem("gm_device"); if(!d){ d="dev-"+Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem("gm_device",d); } return d; }catch(e){ return "dev-nostore"; } }
+function deviceLabel(){
+  const ua=navigator.userAgent; let os="Device", br="Browser";
+  if(/iPhone/.test(ua))os="iPhone"; else if(/iPad/.test(ua))os="iPad"; else if(/Android/.test(ua))os="Android"; else if(/Macintosh/.test(ua))os="Mac"; else if(/Windows/.test(ua))os="Windows"; else if(/Linux/.test(ua))os="Linux";
+  if(/CriOS|Chrome/.test(ua))br="Chrome"; else if(/FxiOS|Firefox/.test(ua))br="Firefox"; else if(/Edg/.test(ua))br="Edge"; else if(/Safari/.test(ua))br="Safari";
+  return os+" · "+br;
+}
 
 /* ===================== API + STATE ===================== */
 const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbxwMV2BR2uic4h74of_F5gP0u4j2NgJS6sgCOFR_8lnRfx_iIyQN_Hq5YfDz_35mdd8/exec"; // live backend; blank ⇒ demo mode
@@ -272,7 +286,7 @@ const Auth = {
       if(!username||!password){ $("gateErr").textContent="Enter username and password"; return; }
       $("gateErr").textContent=""; btn.disabled=true; btn.textContent="Signing in…";
       try{
-        const res=await Api.call("login",{username,password});
+        const res=await Api.call("login",{username,password,deviceId:deviceId(),deviceLabel:deviceLabel()});
         if(res && res.success && res.role){
           State.role=res.role; State.token=res.token||null; State.username=res.username||username;
           try{ sessionStorage.setItem("gm_role",res.role); sessionStorage.setItem("gm_token",res.token||""); sessionStorage.setItem("gm_user",State.username); }catch(e){}
@@ -283,6 +297,12 @@ const Auth = {
     form.addEventListener("submit",submit);
     btn.addEventListener("click",submit);
     $("lg_pass").addEventListener("keydown",e=>{ if(e.key==="Enter")submit(); });
+  },
+  toggleEye(){
+    const inp=$("lg_pass"), btn=$("lg_eye"); if(!inp)return;
+    const show=inp.type==="password"; inp.type=show?"text":"password";
+    btn.style.color=show?"var(--lime)":"var(--muted)";
+    btn.setAttribute("aria-label",show?"Hide password":"Show password");
   },
   async enter(){
     $("gate").style.display="none"; $("app").style.display="block"; $("bottomnav").style.display="flex";
@@ -399,15 +419,53 @@ const Pipeline = {
   filter:"all",
   view(){
     const jobs=State.jobs();
+    const reqs=State.snapshot.requests||[];
     const counts={}; STAGES.forEach(s=>counts[s]=jobs.filter(j=>j.stage===s).length);
+    if(this.filter==="requests"){
+      return `<div class="screen-title">Pipeline</div>
+      ${this.filterRow(jobs,counts,reqs)}
+      ${reqs.length?[...reqs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map(r=>this.requestCard(r)).join(""):`<div class="empty">No booking requests right now.</div>`}`;
+    }
     let list=[...jobs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
     if(this.filter!=="all") list=list.filter(j=>j.stage===this.filter);
     return `<div class="screen-title">Pipeline</div>
-    <div class="filter-row">
+    ${this.filterRow(jobs,counts,reqs)}
+    ${list.length?list.map(j=>this.card(j)).join(""):`<div class="empty">No jobs in this stage.</div>`}`;
+  },
+  filterRow(jobs,counts,reqs){
+    return `<div class="filter-row">
+      ${reqs.length?`<button class="filter ${this.filter==="requests"?"active":""}" style="${this.filter==="requests"?"":"border-color:var(--gold,#B8FF00);color:var(--lime)"}" onclick="Pipeline.set('requests')">🔔 Requests ${reqs.length}</button>`:""}
       <button class="filter ${this.filter==="all"?"active":""}" onclick="Pipeline.set('all')">All ${jobs.length}</button>
       ${STAGES.map(s=>`<button class="filter ${this.filter===s?"active":""}" onclick="Pipeline.set('${s}')">${esc(STAGE_SHORT[s])} ${counts[s]}</button>`).join("")}
-    </div>
-    ${list.length?list.map(j=>this.card(j)).join(""):`<div class="empty">No jobs in this stage.</div>`}`;
+    </div>`;
+  },
+  requestCard(r){
+    const when=[r.preferredDate?shortDate(r.preferredDate):"",r.preferredTime||""].filter(Boolean).join(" · ");
+    const promo=r.promoCode?`<span class="chip lime" style="margin-left:4px">${esc(r.promoCode)}</span>`:"";
+    return `<div class="card" style="border-color:rgba(184,255,0,0.3)">
+      <div style="display:flex;justify-content:space-between;gap:8px">
+        <div><div style="font-weight:700;font-size:15px">${esc(r.name)} ${promo}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(r.phone)} · ${esc(r.vehicle||[r.make,r.model].filter(Boolean).join(" "))}</div></div>
+        <span class="chip warn">New request</span></div>
+      <div style="font-size:12.5px;color:#cfcfcf;margin-top:10px">${esc(r.services||"—")}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted);flex-wrap:wrap;gap:6px">
+        ${r.amount>0?`<span>Quote <strong style="color:var(--lime)">${money(r.amount)}</strong></span>`:""}
+        ${when?`<span>Wants <strong style="color:#fff">${esc(when)}</strong></span>`:""}
+        <span>${esc(r.vehicleClass==1?"SUV":"Saloon")} · via ${esc(r.source||"website")}</span></div>
+      ${r.notes?`<div style="font-size:11.5px;color:var(--muted2);margin-top:8px;font-style:italic">“${esc(r.notes)}”</div>`:""}
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn" style="flex:2" onclick="Pipeline.approve('${r.id}')">Approve → new job</button>
+        <button class="btn-2" onclick="Pipeline.rejectRequest('${r.id}')">Delete</button>
+      </div>
+    </div>`;
+  },
+  approve(id){
+    const r=(State.snapshot.requests||[]).find(x=>x.id===id); if(!r)return;
+    NewJob.fromRequest(r);
+  },
+  async rejectRequest(id){
+    if(!confirm("Delete this booking request? (Use this if the customer isn't coming.)"))return;
+    await act(async()=>{ const res=await Api.call("deleteRequest",{id}); if(!handle(res))return; await refreshAndRender(); toast("Request removed"); });
   },
   set(f){ this.filter=f; Screens.render(); },
   card(j){
@@ -422,6 +480,7 @@ const Pipeline = {
         <span>Total <strong style="color:#fff">${money(j.finalAmount)}</strong></span>
         <span>Paid <strong style="color:#fff">${money(j.totalPaid)}</strong></span>
         <span>Balance <strong style="color:${balColor(j)}">${j.balance>0?money(j.balance):"PAID IN FULL"}</strong></span></div>
+      ${can("viewProfit")&&num(j.cost)>0?`<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:var(--muted2);flex-wrap:wrap;gap:6px"><span>Cost ${money(j.cost)}</span><span>Profit <strong style="color:${j.finalAmount-num(j.cost)>=0?"var(--lime)":"var(--danger)"}">${money(j.finalAmount-num(j.cost))}</strong> (${j.finalAmount>0?Math.round((j.finalAmount-num(j.cost))/j.finalAmount*100):0}%)</span></div>`:""}
       <div class="stepper">${STAGES.map((st,i)=>`<div class="step ${i<idx?"done":""} ${i===idx?"current":""}" onclick="Pipeline.move('${j.id}','${st}')">${esc(STAGE_SHORT[st])}</div>`).join("")}</div>
       <div class="btn-row" style="margin-top:12px">
         ${j.balance>0?`<button class="btn-2" style="color:var(--lime);border-color:rgba(184,255,0,0.4)" onclick="ClearBalance.open('${j.id}')">Clear balance</button>`:""}
@@ -446,7 +505,41 @@ const Pipeline = {
 /* ===================== NEW JOB ===================== */
 const NewJob = {
   f:null,
-  fresh(){ return {plate:"",make:"",model:"",year:"",colour:"",vehicleClass:0,customerName:"",primaryPhone:"",channel:"WhatsApp",svcGroup:"package",svcItem:"",svcFilm:"",cart:[],noteEdited:false,promoCode:"",deposit:"",method:"M-Pesa",mpesaCode:"",technician:"",loggedBy:""}; },
+  fresh(){ return {plate:"",make:"",model:"",year:"",colour:"",vehicleClass:0,customerName:"",primaryPhone:"",channel:"WhatsApp",svcGroup:"package",svcItem:"",svcFilm:"",cart:[],noteEdited:false,promoCode:"",deposit:"",method:"M-Pesa",mpesaCode:"",technician:"",pricingMode:"staff",memberPeriod:"monthly",loggedBy:"",requestId:"",descPrefill:""}; },
+  memberPeriod(){ return MEMBER_PERIODS.find(x=>x.id===this.f.memberPeriod)||MEMBER_PERIODS[0]; },
+  hasMembership(){ return this.f.cart.some(e=>e.groupId==="membership")||this.f.svcGroup==="membership"; },
+  forcedCostToCost(){ const t=String(this.f.technician||"").toLowerCase(); return /\bavin\b/.test(t)||t.includes("owner"); },
+  costToCost(){ return this.forcedCostToCost()||this.f.pricingMode==="cost"; },
+  staffPicker(){
+    const sel=$("n_techSel"); if(!sel)return;
+    const staff=(State.snapshot.staff||[]).map(s=>s.name).filter(Boolean);
+    const opts=["Avin (Owner)"].concat(staff.filter(n=>!/avin/i.test(n))).concat(["Other…"]);
+    sel.innerHTML='<option value="">— Select who\'s doing the work —</option>'+opts.map(o=>`<option ${o===this.f.technician?"selected":""}>${esc(o)}</option>`).join("");
+    if(this.f.technician&&!opts.includes(this.f.technician)){ sel.value="Other…"; }
+    sel.addEventListener("change",e=>{
+      if(e.target.value==="Other…"){ this.techOther(true); }
+      else { this.f.technician=e.target.value==="Avin (Owner)"?"Avin (Owner)":e.target.value; this.techOther(false); this.pricing(); this.preview(); this.cart(); this.balHint(); }
+    });
+    this.techOther(sel.value==="Other…");
+  },
+  techOther(show){ const w=$("n_techOther"); if(!w)return; if(!show){w.innerHTML="";return;} w.innerHTML=`<label>Name<input id="n_techName" placeholder="technician name" value="${esc(this.f.technician)}"></label>`; const i=$("n_techName"); if(i)i.addEventListener("input",e=>{this.f.technician=e.target.value;this.pricing();this.preview();this.cart();this.balHint();}); },
+  pricing(){ const w=$("n_pricingWrap"); if(!w)return; const forced=this.forcedCostToCost();
+    if(forced)this.f.pricingMode="cost";
+    w.innerHTML=`<label>Pricing</label><div class="method-row"><button type="button" class="method-btn ${!this.costToCost()?"active":""}" ${forced?"disabled style='opacity:.5'":""} onclick="NewJob.setPricing('staff')">Staff pricing</button><button type="button" class="method-btn ${this.costToCost()?"active":""}" onclick="NewJob.setPricing('cost')">Cost to cost</button></div>${forced?`<div class="hint">${esc(this.f.technician)} is billed <strong>cost to cost</strong> (no markup) automatically.</div>`:this.costToCost()?`<div class="hint">Cost-to-cost: charged at material + labour cost, no markup, no discount.</div>`:""}`;
+  },
+  setPricing(m){ if(this.forcedCostToCost())return; this.f.pricingMode=m; this.pricing(); this.preview(); this.cart(); this.balHint(); },
+  fromRequest(r){
+    const f=this.fresh();
+    f.customerName=r.name||""; f.primaryPhone=r.phone||"";
+    f.make=r.make||""; f.model=r.model||""; f.year=r.year||""; f.vehicleClass=num(r.vehicleClass);
+    f.promoCode=r.promoCode||""; f.channel="Website";
+    f.noteEdited=true; f.requestId=r.id;
+    const when=[r.preferredDate?shortDate(r.preferredDate):"",r.preferredTime||""].filter(Boolean).join(" ");
+    f.descPrefill=[r.services||"", when?("Requested: "+when):"", r.notes||""].filter(Boolean).join(" · ");
+    this.f=f;
+    Screens.go("new");
+    toast("Add the plate & pick services to confirm this booking");
+  },
   view(){
     if(!this.f) this.f=this.fresh();
     const f=this.f;
@@ -484,7 +577,9 @@ const NewJob = {
       <label>Deposit received (KSh)<input id="n_deposit" type="number" inputmode="numeric" value="${esc(f.deposit)}"></label>
       <div id="n_balHint" style="font-size:12px;color:var(--muted);margin-bottom:12px"></div>
       <div id="n_payWrap"></div>
-      <label>Technician<input id="n_tech" placeholder="who's doing the work" value="${esc(f.technician)}"></label>
+      <div id="n_pricingWrap"></div>
+      <label>Technician / staff<select id="n_techSel"></select></label>
+      <div id="n_techOther"></div>
       <label>Logged by<input id="n_by" placeholder="your name" value="${esc(f.loggedBy)}"></label>
       <button class="btn" id="n_submit" style="margin-top:6px">Create job</button>
       <div id="n_note" style="font-size:12px;color:var(--muted);margin-top:10px"></div>
@@ -508,7 +603,7 @@ const NewJob = {
     $("n_desc").addEventListener("input",()=>f.noteEdited=true);
     $("n_promo").addEventListener("input",()=>{ f.promoCode=$("n_promo").value; this.promoHint(); this.balHint(); });
     $("n_deposit").addEventListener("input",()=>{ f.deposit=$("n_deposit").value; this.balHint(); });
-    $("n_tech").addEventListener("input",e=>f.technician=e.target.value);
+    this.staffPicker(); this.pricing();
     $("n_by").addEventListener("input",e=>f.loggedBy=e.target.value);
     $("n_submit").addEventListener("click",()=>this.submit());
     this.syncDesc();
@@ -551,24 +646,25 @@ const NewJob = {
     if(gid==="ppf"||gid==="tint"){ if(!fid||!it.price[fid])return null; const fo=gid==="ppf"?C.PPF_FILM:C.TINT_FILM; const fn=(fo.find(f=>f.id===fid)||{}).name||""; return {price:it.price[fid][vc],label:it.name+" — "+fn}; }
     if(gid==="problem")return {price:it.price[vc],label:it.fix};
     return {price:it.price[vc],label:it.name}; },
-  preview(){ const el=$("n_svcPreview"); if(!el)return; const r=this.price(this.f.svcGroup,this.f.svcItem,this.f.svcFilm,this.f.vehicleClass); el.innerHTML=r?`<div class="hint">${esc(r.label)} · ${this.f.vehicleClass==1?"SUV":"Saloon"} · <strong>${money(r.price)}</strong></div>`:""; },
+  preview(){ const el=$("n_svcPreview"); if(!el)return; const r=this.price(this.f.svcGroup,this.f.svcItem,this.f.svcFilm,this.f.vehicleClass); let html=r?`<div class="hint">${esc(r.label)} · ${this.f.vehicleClass==1?"SUV":"Saloon"} · <strong>${money(r.price)}</strong>${this.f.svcGroup==="membership"?" / month":""}</div>`:""; if(this.hasMembership()){ html+=`<label style="margin-top:4px">Membership billing period<select id="n_memberPeriod">${MEMBER_PERIODS.map(pr=>`<option value="${pr.id}" ${pr.id===this.f.memberPeriod?"selected":""}>${pr.label}${pr.save>0?" (−"+Math.round(pr.save*100)+"% savings)":""}</option>`).join("")}</select></label>`; } el.innerHTML=html; const ms=$("n_memberPeriod"); if(ms)ms.addEventListener("change",e=>{ this.f.memberPeriod=e.target.value; this.preview(); this.cart(); this.balHint(); }); },
   add(){ if(!this.f.svcItem)return; if((this.f.svcGroup==="ppf"||this.f.svcGroup==="tint")&&!this.f.svcFilm)return; this.f.cart.push({groupId:this.f.svcGroup,itemId:this.f.svcItem,filmId:this.f.svcFilm||""}); this.f.svcItem="";this.f.svcFilm=""; this.svcItems();this.svcFilm();this.preview();this.cart();this.syncDesc();this.balHint();this.promoHint(); },
-  cartInfo(e){ return this.price(e.groupId,e.itemId,e.filmId,this.f.vehicleClass); },
+  cartInfo(e){ const r=this.price(e.groupId,e.itemId,e.filmId,this.f.vehicleClass); if(r&&e.groupId==="membership"){ const per=this.memberPeriod(); return {price:Math.round(r.price*per.months*(1-per.save)),label:r.label+" · "+per.label+(per.save>0?" (−"+Math.round(per.save*100)+"% savings)":"")}; } return r; },
   cartTotal(){ return this.f.cart.reduce((a,e)=>{const i=this.cartInfo(e);return a+(i?i.price:0);},0); },
   cartCost(){ return this.f.cart.reduce((a,e)=>a+costFor(e.groupId,e.itemId,e.filmId,this.f.vehicleClass),0); },
   cartLabels(){ return this.f.cart.map(e=>{const i=this.cartInfo(e);return i?i.label:"";}).filter(Boolean).join(" + "); },
-  cart(){ const el=$("n_cart"); if(!el)return; el.innerHTML=this.f.cart.length?this.f.cart.map((e,i)=>{const info=this.cartInfo(e)||{label:"?",price:0};return `<div class="cart-line"><span>${esc(info.label)}</span><span style="display:flex;align-items:center;gap:10px"><strong>${money(info.price)}</strong><button class="cart-x" onclick="NewJob.remove(${i})">×</button></span></div>`;}).join(""):`<div style="font-size:11.5px;color:var(--muted2);padding:6px 0">No services added.</div>`; const t=$("n_total"); if(t)t.textContent=money(this.cartTotal()); const pr=$("n_profit"); if(pr){ const cost=this.cartCost(); const fin=this.finalAmount(); const profit=fin-cost; pr.innerHTML=(can("viewProfit")&&this.f.cart.length)?`Est. cost ${money(cost)} · profit <strong style="color:${profit>=0?"var(--lime)":"var(--danger)"}">${money(profit)}</strong> (${fin>0?Math.round(profit/fin*100):0}%)`:""; } },
+  cart(){ const el=$("n_cart"); if(!el)return; el.innerHTML=this.f.cart.length?this.f.cart.map((e,i)=>{const info=this.cartInfo(e)||{label:"?",price:0};return `<div class="cart-line"><span>${esc(info.label)}</span><span style="display:flex;align-items:center;gap:10px"><strong>${money(info.price)}</strong><button class="cart-x" onclick="NewJob.remove(${i})">×</button></span></div>`;}).join(""):`<div style="font-size:11.5px;color:var(--muted2);padding:6px 0">No services added.</div>`; const t=$("n_total"); if(t)t.textContent=money(this.finalAmount()); const pr=$("n_profit"); if(pr){ const cost=this.cartCost(); const fin=this.finalAmount(); const profit=fin-cost; pr.innerHTML=(can("viewProfit")&&this.f.cart.length)?`Est. cost ${money(cost)} · profit <strong style="color:${profit>=0?"var(--lime)":"var(--danger)"}">${money(profit)}</strong> (${fin>0?Math.round(profit/fin*100):0}%)`:""; } },
   remove(i){ this.f.cart.splice(i,1); this.cart();this.syncDesc();this.balHint();this.promoHint(); },
   syncDesc(){ if(this.f.noteEdited)return; const d=$("n_desc"); if(d)d.value=this.cartLabels(); },
   pay(){ const w=$("n_payWrap"); if(!w)return; w.innerHTML=`<label>Payment method</label><div class="method-row"><button type="button" class="method-btn ${this.f.method==="M-Pesa"?"active":""}" onclick="NewJob.setMethod('M-Pesa')">M-Pesa</button><button type="button" class="method-btn ${this.f.method==="Cash"?"active":""}" onclick="NewJob.setMethod('Cash')">Cash</button></div>${this.f.method==="M-Pesa"?`<label>M-Pesa code<input id="n_mpesa" placeholder="e.g. QCH7XXXXX" style="text-transform:uppercase" value="${esc(this.f.mpesaCode)}"></label>`:""}`; const mp=$("n_mpesa"); if(mp)mp.addEventListener("input",e=>this.f.mpesaCode=e.target.value.toUpperCase()); },
   setMethod(m){ this.f.method=m; this.pay(); },
-  discountRate(){ const p=(State.snapshot.promos||[]).find(x=>String(x.code).toUpperCase()===String(this.f.promoCode).trim().toUpperCase()); return p?(p.discountRate===undefined?C.DISCOUNT_RATE:num(p.discountRate)):0; },
+  discountRate(){ const p=(State.snapshot.promos||[]).find(x=>String(x.code).toUpperCase()===String(this.f.promoCode).trim().toUpperCase()); const member=(State.snapshot.members||[]).find(m=>m.active!==false&&waDigits(m.phone)===waDigits(this.f.primaryPhone)); const promoR=p?(p.discountRate===undefined?C.DISCOUNT_RATE:num(p.discountRate)):0; const memR=member?num(member.discountRate):0; return Math.max(promoR,memR); },
+  discountBase(){ if(this.costToCost())return 0; return this.f.cart.reduce((a,e)=>{ if(e.groupId==="membership")return a; const i=this.cartInfo(e); return a+(i?i.price:0); },0); },
   promoHint(){ const el=$("n_promoHint"); if(!el)return; const code=this.f.promoCode.trim(); if(!code){el.innerHTML="";return;} const p=(State.snapshot.promos||[]).find(x=>String(x.code).toUpperCase()===code.toUpperCase()); const amt=this.cartTotal(); if(p){const dr=(p.discountRate===undefined?C.DISCOUNT_RATE:num(p.discountRate));const fin=Math.round(amt*(1-dr));el.innerHTML=`<div class="hint">${esc(p.owner)} · ${Math.round(dr*100)}% off (−${money(amt-fin)}) · final ${money(fin)}</div>`;}else el.innerHTML=`<div class="hint warn">Code not found — won't be linked to a partner.</div>`; },
-  finalAmount(){ const amt=this.cartTotal(); return Math.round(amt*(1-this.discountRate())); },
+  finalAmount(){ if(this.costToCost())return this.cartCost(); const amt=this.cartTotal(); return Math.max(0, amt - Math.round(this.discountBase()*this.discountRate())); },
   balHint(){ const el=$("n_balHint"); if(!el)return; const dep=num($("n_deposit")?.value); const fin=this.finalAmount(); el.innerHTML=(fin&&dep)?`Balance after deposit: <strong style="color:#fff">${money(Math.max(0,fin-dep))}</strong>`:""; },
   async submit(){
     const f=this.f; const note=$("n_note");
-    const amount=this.cartTotal(); const finalAmount=this.finalAmount(); const deposit=num($("n_deposit").value);
+    const amount=this.costToCost()?this.cartCost():this.cartTotal(); const finalAmount=this.finalAmount(); const deposit=num($("n_deposit").value);
     if(!f.plate){ note.textContent="Enter the number plate."; note.style.color="var(--danger)"; return; }
     if(!f.cart.length){ note.textContent="Add at least one service."; note.style.color="var(--danger)"; return; }
     if(!f.customerName.trim()||!f.primaryPhone.trim()){ note.textContent="Owner name and phone are required."; note.style.color="var(--danger)"; return; }
@@ -581,7 +677,7 @@ const NewJob = {
       try{
         const res=await Api.call("createJob",{plate:f.plate,make:f.make,model:f.model,year:f.year,colour:f.colour,vehicleClass:f.vehicleClass,
           customerName:f.customerName,primaryPhone:f.primaryPhone,channel:f.channel,services:desc,
-          amount,finalAmount,discount:amount-finalAmount,cost:this.cartCost(),promoCode:p?p.code:"",deposit,paymentMethod:f.method,mpesaCode:f.mpesaCode,
+          amount,finalAmount,discount:amount-finalAmount,discountBase:this.discountBase(),cost:this.cartCost(),promoCode:p?p.code:"",deposit,paymentMethod:f.method,mpesaCode:f.mpesaCode,
           technician:f.technician,loggedBy:f.loggedBy});
         if(!handle(res)){ note.textContent=res&&res.message||"Failed"; note.style.color="var(--danger)"; return; }
         this.f=this.fresh(); await Api.load(); toast("Job "+(res.jobNo||"")+" created"); Screens.go("pipeline");
@@ -653,7 +749,7 @@ const Vehicles = {
         <div><div style="font-weight:700">${esc(fmtPlate(v.plate))} <span style="font-size:10px;color:var(--muted2)">${open?"▲":"▼"}</span></div>
         <div style="font-size:11px;color:var(--muted2);margin-top:2px">${[v.make,v.model,v.year,v.colour].filter(Boolean).map(esc).join(" · ")||"—"} · ${v.vehicleClass==1?"SUV":"Saloon"}</div></div>
         <span class="chip">${jobs.length} visit${jobs.length===1?"":"s"}</span></div>
-      ${open?(jobs.length?jobs.map(j=>`<div onclick="event.stopPropagation();JobDetail.open('${j.id}')" style="cursor:pointer;font-size:11.5px;color:#b5b5b5;padding:7px 0;border-top:1px solid var(--border);margin-top:7px;display:flex;justify-content:space-between;gap:8px"><span>${shortDate(j.createdAt)} · ${esc(j.jobNo||"")} · ${esc(j.services||"—")}</span><span style="color:${j.balance>0?"var(--warn)":"var(--lime)"};white-space:nowrap">${j.balance>0?money(j.balance)+" owed":"paid"}</span></div>`).join(""):`<div style="font-size:11px;color:var(--muted2);padding:7px 0">No visits yet.</div>`)+`<div style="font-size:10.5px;color:var(--muted2);margin-top:6px">Last visit ${shortDate(last)}</div>`:""}
+      ${open?(jobs.length?jobs.map(j=>`<div onclick="event.stopPropagation();JobDetail.open('${j.id}')" style="cursor:pointer;font-size:11.5px;color:#b5b5b5;padding:7px 0;border-top:1px solid var(--border);margin-top:7px;display:flex;justify-content:space-between;gap:8px"><span>${shortDate(j.createdAt)} · ${esc(j.jobNo||"")} · ${esc(j.services||"—")}${(j.photos||[]).length?` <span style="color:var(--lime)">📎${(j.photos||[]).length}</span>`:""}</span><span style="color:${j.balance>0?"var(--warn)":"var(--lime)"};white-space:nowrap">${j.balance>0?money(j.balance)+" owed":"paid"}${can("viewProfit")&&num(j.cost)>0?`<br><span style="color:var(--muted2)">P ${money(j.finalAmount-num(j.cost))}</span>`:""}</span></div>`).join(""):`<div style="font-size:11px;color:var(--muted2);padding:7px 0">No visits yet.</div>`)+`<div style="font-size:10.5px;color:var(--muted2);margin-top:6px">Last visit ${shortDate(last)}</div>`:""}
     </div>`;
   }
 };
@@ -675,6 +771,6 @@ const UI={connect:()=>{}};
   if(savedRole){ State.role=savedRole; State.token=savedTok; State.username=savedUser; Auth.enter(); }
 })();
 </script>
-<script src="app.part2.js?v=7.5.1"></script>
+<script src="app.part2.js?v=7.6.1"></script>
 </body>
 </html>
