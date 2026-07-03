@@ -166,6 +166,7 @@ function detectClass(make,model){const entry=VEHICLES[make];const t=entry&&entry
 const SERVICE_GROUPS=[
   {id:"package",label:"Package",items:DETAIL.filter(d=>d.id!=="none")},
   {id:"addon",label:"Add-on",items:ADDONS},
+  {id:"membership",label:"Membership",items:MEMBERSHIP.filter(m=>m.id!=="none")},
   {id:"ppf",label:"PPF",items:PPF_COV.filter(p=>p.id!=="none")},
   {id:"tint",label:"Window Tint",items:TINT_COV.filter(t=>t.id!=="none")},
   {id:"problem",label:"By Problem",items:PROBLEMS},

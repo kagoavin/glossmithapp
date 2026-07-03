@@ -121,11 +121,15 @@ Object.assign(JobDetail,{
     `);
   },
   photoSection(label,photos,phase,jobId){
-    return `<div class="section-title">${label} photos</div>
+    return `<div class="section-title">${label} photos <span style="color:var(--muted2);font-weight:400">(${photos.length})</span></div>
       <div class="photo-strip">
-        ${photos.map(p=>`<div class="photo-thumb"><img src="${esc(p.url)}"><button class="del" onclick="JobDetail.delPhoto('${p.id}')">×</button></div>`).join("")||`<div style="font-size:11.5px;color:var(--muted2);padding:8px 0">None yet.</div>`}
+        ${photos.map(p=>`<div class="photo-thumb"><img src="${esc(p.url)}" loading="lazy"><span style="position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.6);color:var(--lime);font-size:8px;font-weight:700;padding:1px 4px;border-radius:4px">✓ SAVED</span><button class="del" onclick="JobDetail.delPhoto('${p.id}')">×</button></div>`).join("")||`<div style="font-size:11.5px;color:var(--muted2);padding:8px 0">None yet.</div>`}
       </div>
-      <button class="btn-2" style="width:100%;margin-top:6px" onclick="JobDetail.capture('${jobId}','${phase}')">📷 Add ${label.toLowerCase()} photo</button>`;
+      <div class="btn-row" style="margin-top:6px">
+        <button class="btn-2" onclick="JobDetail.capture('${jobId}','${phase}',true)">📷 Camera</button>
+        <button class="btn-2" onclick="JobDetail.capture('${jobId}','${phase}',false)">🖼️ Gallery</button>
+      </div>
+      <div id="ph_${phase}_status" style="font-size:11.5px;margin-top:6px"></div>`;
   },
   async move(id,stage){
     const j=State.job(id); if(stage===j.stage)return;
@@ -137,17 +141,31 @@ Object.assign(JobDetail,{
     const inp=$("jd_note"); const msg=(inp.value||"").trim(); if(!msg)return;
     await act(async()=>{ const res=await Api.call("addNote",{jobId:id,message:msg,user:State.role}); if(!handle(res))return; await Api.load(); this.open(id); });
   },
-  capture(jobId,phase){
-    const input=document.createElement("input"); input.type="file"; input.accept="image/*"; input.capture="environment";
+  capture(jobId,phase,useCamera){
+    const input=document.createElement("input"); input.type="file"; input.accept="image/*"; input.multiple=true;
+    if(useCamera)input.capture="environment";
     input.onchange=async e=>{
-      const file=e.target.files[0]; if(!file)return;
-      const st=$("jd_note_status"); if(st){st.textContent="Compressing & uploading…";st.style.color="var(--muted)";}
-      try{
-        const dataUrl=await compressImage(file,1280,0.7);
-        const res=await Api.call("uploadPhoto",{jobId,phase,dataUrl});
-        if(!handle(res)){ if(st){st.textContent=res&&res.message||"Upload failed";st.style.color="var(--danger)";} return; }
-        await Api.load(); this.open(jobId);
-      }catch(err){ if(st){st.textContent="Failed: "+(err.message||err);st.style.color="var(--danger)";} }
+      const files=[...(e.target.files||[])]; if(!files.length)return;
+      const st=$("ph_"+phase+"_status");
+      let saved=0, failed=0;
+      for(let i=0;i<files.length;i++){
+        if(st){st.textContent=`Uploading ${i+1} of ${files.length}…`;st.style.color="var(--muted)";}
+        let ok=false;
+        for(let attempt=0;attempt<2 && !ok;attempt++){
+          try{
+            const dataUrl=await compressImage(files[i],1280,0.7);
+            const res=await Api.call("uploadPhoto",{jobId,phase,dataUrl});
+            if(res && res.success){ ok=true; saved++; }
+            else if(attempt===1){ failed++; if(st){st.textContent=(res&&res.message)||"Upload failed";} }
+          }catch(err){ if(attempt===1){ failed++; if(st){st.textContent="Failed: "+(err.message||err);st.style.color="var(--danger)";} } }
+        }
+      }
+      await Api.load();
+      this.open(jobId); // re-render — the photos now render from the server = proof they saved
+      const st2=$("ph_"+phase+"_status");
+      if(st2){ if(failed){ st2.textContent=`✓ ${saved} saved · ${failed} failed — tap to retry the failed one(s).`; st2.style.color="var(--warn)"; }
+               else { st2.textContent=`✓ ${saved} photo${saved===1?"":"s"} saved`+(State.demo?" (demo: on this device)":" to Google Drive"); st2.style.color="var(--lime)"; } }
+      toast(failed?`${saved} saved, ${failed} failed`:`✓ ${saved} photo${saved===1?"":"s"} saved`, failed>0);
     };
     input.click();
   },
@@ -293,6 +311,8 @@ Object.assign(More,{
     const tabs=[];
     if(can("viewReports"))tabs.push(["reports","Reports"]);
     if(can("accounting"))tabs.push(["accounting","Accounting"]);
+    if(can("viewPartners"))tabs.push(["partners","Partners"]);
+    tabs.push(["members","Members"]);
     if(can("financials"))tabs.push(["promos","Promos"]);
     if(can("manageAccounts"))tabs.push(["accounts","Accounts"]);
     if(State.role==="owner")tabs.push(["dev","Developer"]);
@@ -302,8 +322,69 @@ Object.assign(More,{
     <div id="more_body">${this.body()}</div>`:`<div class="empty">Nothing here for your role. Use Home, Pipeline, ＋ and Vehicles.</div>`}`;
   },
   set(t){ this.tab=t; Screens.render(); },
-  after(){ if(this.tab==="promos")this.wirePromo(); if(this.tab==="accounting")this.wireAccounting(); if(this.tab==="accounts")this.wireAccounts(); },
+  after(){ if(this.tab==="promos")this.wirePromo(); if(this.tab==="accounting")this.wireAccounting(); if(this.tab==="accounts")this.wireAccounts(); if(this.tab==="members")this.wireMembers(); if(this.tab==="partners")this.wirePartners(); },
   body(){ return this[this.tab]?this[this.tab]():""; },
+  /* --- members (all roles view; only owner deletes) --- */
+  members(){
+    const members=(State.snapshot.members||[]).slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+    const clubs={}; members.forEach(m=>{const k=m.club||"Glossmith Club";clubs[k]=(clubs[k]||0)+1;});
+    return `<div class="hint">Members enjoy an automatic discount on every job — applied the moment their phone is recognised. Club codes enrol customers automatically; you can also add members by hand.</div>
+    <div style="max-width:520px"><div class="section-title" style="margin-top:0">Add member manually</div>
+      <label>Name<input id="mb_name"></label>
+      <label>Phone<input id="mb_phone" placeholder="07XX XXX XXX" inputmode="tel"></label>
+      <div style="display:flex;gap:10px"><label style="flex:1">Club<input id="mb_club" value="Glossmith Club"></label><label style="flex:1">Discount (%)<input id="mb_disc" type="number" value="5"></label></div>
+      <button class="btn" id="mb_add">Add member</button><div id="mb_note" style="font-size:12px;color:var(--muted);margin-top:8px"></div></div>
+    <div class="section-title">Members <span style="color:var(--muted2);font-weight:400">(${members.length})</span></div>
+    ${Object.keys(clubs).length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${Object.keys(clubs).map(k=>`<span class="chip lime">${esc(k)} · ${clubs[k]}</span>`).join("")}</div>`:""}
+    ${members.length?members.map(m=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700">${esc(m.name||"—")}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(m.phone||"")} · ${esc(m.club||"Glossmith Club")}</div><div style="font-size:11px;color:var(--muted2);margin-top:3px">${Math.round(num(m.discountRate)*100)}% off · ${m.source==="promo"?"via code "+esc(m.promoCode):"added manually"} · ${shortDate(m.createdAt)}</div></div><div style="text-align:right"><span class="chip lime">${Math.round(num(m.discountRate)*100)}%</span>${can("deleteJobs")?`<br><button class="btn-2" style="margin-top:8px;padding:4px 10px;color:var(--danger);border-color:rgba(224,112,104,0.3)" onclick="More.delMember('${m.id}')">Remove</button>`:""}</div></div></div>`).join(""):`<div class="empty">No members yet.</div>`}`;
+  },
+  wireMembers(){ const b=$("mb_add"); if(b)b.addEventListener("click",async()=>{
+    const name=$("mb_name").value.trim(), phone=$("mb_phone").value.trim(), club=$("mb_club").value.trim()||"Glossmith Club", discountRate=num($("mb_disc").value||5)/100, note=$("mb_note");
+    if(!name||!phone){ note.textContent="Enter name and phone."; note.style.color="var(--danger)"; return; }
+    await act(async()=>{ const res=await Api.call("addMember",{name,phone,club,discountRate,source:"manual"}); if(!handle(res)){note.textContent=res&&res.message;note.style.color="var(--danger)";return;} await Api.load(); toast("Member added"); this.set("members"); });
+  }); },
+  async delMember(id){ if(!confirm("Remove this member? They'll lose their automatic discount."))return; await act(async()=>{ const res=await Api.call("deleteMember",{id}); if(!handle(res))return; await Api.load(); toast("Member removed"); this.set("members"); }); },
+  /* --- partners (owner + manager; kept away from full financials) --- */
+  partnerSel:"",
+  partners(){
+    const partners=(State.snapshot.partners||[]).filter(p=>p.jobs>0||p.commissionAccrued>0||p.paid>0);
+    const pays=(State.snapshot.commissionPayments||[]).slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+    const totalOwed=partners.reduce((a,p)=>a+p.owed,0);
+    const viewList=this.partnerSel?partners.filter(p=>p.code===this.partnerSel):partners;
+    return `<div class="hint">Partner performance &amp; commissions only — no company financials here.</div>
+    <div class="metric-grid">
+      ${metric("Partners",partners.length,"with activity")}
+      ${metric("Commission owed",money(totalOwed),"across all partners","warn")}
+    </div>
+    <div class="section-title">View partner</div>
+    <select id="pt_view" style="margin-bottom:12px"><option value="">All partners</option>${partners.map(p=>`<option value="${esc(p.code)}" ${this.partnerSel===p.code?"selected":""}>${esc(p.partner)} (${esc(p.code)})</option>`).join("")}</select>
+    ${viewList.length?viewList.map(p=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700">${esc(p.partner)}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(p.code)}${p.club?" · "+esc(p.club):""} · ${Math.round(p.rate*100)}% commission</div></div><span class="chip">${p.jobs} job${p.jobs===1?"":"s"}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12.5px;flex-wrap:wrap;gap:6px">
+        <span>Revenue <strong>${money(p.revenue)}</strong></span>
+        <span>Earned <strong>${money(p.commissionAccrued)}</strong></span>
+        <span>Paid <strong>${money(p.paid)}</strong></span>
+        <span>Owed <strong style="color:${p.owed>0?"var(--warn)":"var(--lime)"}">${money(p.owed)}</strong></span></div></div>`).join(""):`<div class="empty">No partner activity yet.</div>`}
+
+    <div class="section-title">Pay commission</div>
+    <div style="max-width:520px">
+      <label>Partner<select id="pc_partner"><option value="">— Select partner —</option>${partners.map(p=>`<option value="${esc(p.code)}">${esc(p.partner)} — owed ${money(p.owed)}</option>`).join("")}</select></label>
+      <div style="display:flex;gap:10px"><label style="flex:1">Amount (KSh)<input id="pc_amount" type="number" inputmode="numeric"></label><label style="flex:1">M-Pesa code<input id="pc_code" placeholder="confirm code" style="text-transform:uppercase"></label></div>
+      <label>Note (optional)<input id="pc_note" placeholder="e.g. June payout"></label>
+      <button class="btn" id="pc_pay">Record payment</button><div id="pc_msg" style="font-size:12px;color:var(--muted);margin-top:8px"></div></div>
+    <div class="section-title">Recent payouts</div>
+    ${pays.length?pays.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:13.5px">${esc(c.partner)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(c.mpesaCode)}${c.note?" · "+esc(c.note):""} · ${shortDate(c.createdAt)}</div></div><div style="text-align:right"><strong>${money(c.amount)}</strong>${can("deleteJobs")?`<br><button class="btn-2" style="margin-top:6px;padding:4px 10px;color:var(--danger);border-color:rgba(224,112,104,0.3)" onclick="More.delPayout('${c.id}')">Delete</button>`:""}</div></div></div>`).join(""):`<div class="empty">No payouts recorded yet.</div>`}`;
+  },
+  wirePartners(){
+    const v=$("pt_view"); if(v)v.addEventListener("change",e=>{ this.partnerSel=e.target.value; this.set("partners"); });
+    const b=$("pc_pay"); if(b)b.addEventListener("click",async()=>{
+      const promoCode=$("pc_partner").value, amount=num($("pc_amount").value), mpesaCode=$("pc_code").value.trim(), note=$("pc_note").value.trim(), msg=$("pc_msg");
+      if(!promoCode){ msg.textContent="Select a partner."; msg.style.color="var(--danger)"; return; }
+      if(amount<=0){ msg.textContent="Enter an amount."; msg.style.color="var(--danger)"; return; }
+      if(!mpesaCode){ msg.textContent="Enter the M-Pesa code you paid with."; msg.style.color="var(--danger)"; return; }
+      await act(async()=>{ const res=await Api.call("payCommission",{promoCode,amount,mpesaCode,note}); if(!handle(res)){msg.textContent=res&&res.message;msg.style.color="var(--danger)";return;} await Api.load(); toast("Commission payment recorded"); this.set("partners"); });
+    });
+  },
+  async delPayout(id){ if(!confirm("Delete this payout? It will increase the amount owed again."))return; await act(async()=>{ const res=await Api.call("deleteCommissionPayment",{id}); if(!handle(res))return; await Api.load(); toast("Payout deleted"); this.set("partners"); }); },
   /* --- reports --- */
   reports(){
     const jobs=State.jobs(); const d=State.snapshot.dashboard||{};
@@ -316,10 +397,20 @@ Object.assign(More,{
       ${metric("Outstanding",money(outstanding.reduce((a,j)=>a+j.balance,0)),outstanding.length+" owing",outstanding.length?"warn":"lime")}
     </div>
     <button class="btn-2" style="width:100%;margin:14px 0" onclick="Pdf.financial()">📄 Export financial summary (PDF)</button>
+    <div class="section-title">Volume by influencer / partner</div>
+    ${this.partnerVolume()}
     <div class="section-title">Outstanding balances</div>
     ${outstanding.length?outstanding.sort((a,b)=>b.balance-a.balance).map(j=>this.repRow(j)).join(""):`<div class="empty">All clear — nothing outstanding.</div>`}
     <div class="section-title">Recently cleared</div>
     ${cleared.length?cleared.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,8).map(j=>this.repRow(j)).join(""):`<div class="empty">Nothing cleared yet.</div>`}`;
+  },
+  partnerVolume(){
+    const partners=(State.snapshot.partners||[]).filter(p=>p.jobs>0);
+    if(!partners.length)return `<div class="empty">No promo-linked jobs yet.</div>`;
+    const max=Math.max(1,...partners.map(p=>p.jobs));
+    return partners.sort((a,b)=>b.jobs-a.jobs).map(p=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:13.5px">${esc(p.partner)}</div><span class="chip">${p.jobs} job${p.jobs===1?"":"s"}</span></div>
+      <div style="height:8px;background:#0f0f0f;border-radius:6px;margin-top:9px;overflow:hidden"><div style="height:100%;width:${Math.round(p.jobs/max*100)}%;background:var(--lime)"></div></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:7px">${esc(p.code)}${p.club?" · "+esc(p.club):""} · revenue ${money(p.revenue)}</div></div>`).join("");
   },
   repRow(j){ const c=State.customer(j.customerId)||{}; const v=State.vehicle(j.vehicleId)||{};
     return `<div class="card" onclick="JobDetail.open('${j.id}')" style="cursor:pointer"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:13.5px">${esc(c.name||"—")} · ${esc(fmtPlate(v.plate))}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(j.services||"—")} · ${shortDate(j.createdAt)}</div></div><span class="chip ${j.balance>0?"warn":"lime"}">${j.balance>0?money(j.balance):"PAID"}</span></div></div>`;
@@ -330,6 +421,7 @@ Object.assign(More,{
     return `<div style="max-width:520px"><div class="section-title" style="margin-top:0">Add promo code</div>
       <label>Code<input id="pr_code" placeholder="e.g. NAIROBICLUB" style="text-transform:uppercase"></label>
       <label>Partner / owner<input id="pr_owner" placeholder="e.g. Nairobi Car Club"></label>
+      <label>Club (optional) — customers who use this code auto-join this club<input id="pr_club" placeholder="e.g. Nairobi Car Club"></label>
       <label>Category<select id="pr_cat">${C.CATEGORIES.map(c=>`<option>${c}</option>`).join("")}</select></label>
       <label>Customer discount (%) — taken off the customer's price<input id="pr_disc" type="number" value="8" min="0" max="100"></label>
       <label>Partner commission (%) — paid to the partner<input id="pr_rate" type="number" value="10" min="0" max="100"></label>
@@ -338,9 +430,9 @@ Object.assign(More,{
       ${promos.length?promos.map(p=>{const uses=State.jobs().filter(j=>String(j.promoCode).toUpperCase()===String(p.code).toUpperCase()).length;const dr=p.discountRate===undefined?0.08:num(p.discountRate);return `<div class="card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:700">${esc(p.code)}</div><div style="font-size:11.5px;color:var(--muted)">${esc(p.owner)} · ${esc(p.category)}</div><div style="font-size:11px;color:var(--muted2);margin-top:3px">${Math.round(dr*100)}% customer discount · ${Math.round(num(p.rate)*100)}% partner commission</div></div><span class="chip">${uses} use${uses===1?"":"s"}</span></div>${can("deleteJobs")?`<button class="btn-2" style="margin-top:8px;color:var(--danger);border-color:rgba(224,112,104,0.3)" onclick="More.delPromo('${p.id}')">Delete</button>`:""}</div>`;}).join(""):`<div class="empty">No promo codes yet.</div>`}`;
   },
   wirePromo(){ const b=$("pr_add"); if(b)b.addEventListener("click",async()=>{
-    const code=$("pr_code").value.trim(), owner=$("pr_owner").value.trim(), category=$("pr_cat").value, rate=num($("pr_rate").value||10)/100, discountRate=num($("pr_disc").value||8)/100, note=$("pr_note");
+    const code=$("pr_code").value.trim(), owner=$("pr_owner").value.trim(), club=$("pr_club").value.trim(), category=$("pr_cat").value, rate=num($("pr_rate").value||10)/100, discountRate=num($("pr_disc").value||8)/100, note=$("pr_note");
     if(!code||!owner){ note.textContent="Enter code and partner."; note.style.color="var(--danger)"; return; }
-    await act(async()=>{ const res=await Api.call("addPromo",{code,owner,category,rate,discountRate}); if(!handle(res)){note.textContent=res&&res.message;note.style.color="var(--danger)";return;} await Api.load(); toast("Promo added"); this.set("promos"); });
+    await act(async()=>{ const res=await Api.call("addPromo",{code,owner,club,category,rate,discountRate}); if(!handle(res)){note.textContent=res&&res.message;note.style.color="var(--danger)";return;} await Api.load(); toast("Promo added"); this.set("promos"); });
   }); },
   async delPromo(id){ if(!confirm("Delete this promo?"))return; await act(async()=>{ const res=await Api.call("deletePromo",{id}); if(!handle(res))return; await Api.load(); toast("Deleted"); this.set("promos"); }); },
   /* --- accounting 360 --- */
@@ -458,7 +550,11 @@ Object.assign(More,{
         <div><div style="font-weight:700">${esc(u.username)} ${me?`<span style="font-size:10px;color:var(--muted2)">(you)</span>`:""}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${desc}</div></div>
         <span class="chip ${locked?"lime":revoked?"danger":"lime"}">${locked?"🔒 Locked":revoked?"Revoked":"Active"}</span></div>
-      ${locked?`<div style="font-size:11.5px;color:var(--muted2);margin-top:10px">The primary owner account is permanent — it can't be renamed, have its password/role changed, be revoked or deleted.</div>`:`
+      ${locked?`<div style="font-size:11.5px;color:var(--muted2);margin-top:8px">Primary owner — username, role & status are permanent. You can still change its password below.</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="pw_${u.id}" type="text" placeholder="New owner password" style="flex:1">
+        <button class="btn-2" style="flex:0 0 auto;padding:0 14px" onclick="More.changePw('${u.id}')">Change</button>
+      </div>`:`
       <div style="display:flex;gap:8px;margin-top:10px">
         <input id="pw_${u.id}" type="text" placeholder="New password" style="flex:1">
         <button class="btn-2" style="flex:0 0 auto;padding:0 14px" onclick="More.changePw('${u.id}')">Change</button>
@@ -537,7 +633,7 @@ Object.assign(UI,{
       setTimeout(()=>location.reload(),800);
     }catch(e){ note.textContent="Could not reach that URL: "+(e.message||e); note.style.color="var(--danger)"; }
   },
-  useDemo(){ setUrl(""); location.reload(); },
+  useDemo(){ try{localStorage.setItem("gm_url","demo");}catch(e){} location.reload(); },
   async health(){
     const el=$("dev_health"); if(!el)return; el.textContent="Checking…";
     if(State.demo){ el.textContent="Demo mode — no backend to check. Jobs: "+State.jobs().length; return; }
@@ -580,7 +676,10 @@ Object.assign(Demo,{
       {id:"not00002",jobId:"job00002",message:"Interior shampoo started.",user:"James",createdAt:iso(now-86400000*2)},
       {id:"not00003",jobId:"job00003",message:"PPF installed on bumper & hood.",user:"Peter",createdAt:iso(now-86400000*1)},
     ];
-    const promos=[{id:"pro00001",code:"NAIROBICLUB",owner:"Nairobi Car Club",category:"Car Club",rate:0.10,discountRate:0.08,createdAt:iso(now-86400000*50)}];
+    const promos=[
+      {id:"pro00001",code:"NAIROBICLUB",owner:"Nairobi Car Club",club:"Nairobi Car Club",category:"Car Club",rate:0.10,discountRate:0.08,createdAt:iso(now-86400000*50)},
+      {id:"pro00002",code:"SPEEDGARAGE",owner:"Speed Garage",club:"Speed Garage Owners",category:"Car Club",rate:0.12,discountRate:0.10,createdAt:iso(now-86400000*30)}
+    ];
     const staff=[{id:"stf00001",name:"Peter",rate:0.10,createdAt:iso(now)},{id:"stf00002",name:"James",rate:0.08,createdAt:iso(now)}];
     const users=[{id:"usr00001",username:"owner",password:"glossmith",role:"owner",active:true,protected:true},{id:"usr00002",username:"manager",password:"glossmith",role:"manager",active:true},{id:"usr00003",username:"sales",password:"glossmith",role:"sales",active:true}];
     const expenses=[
@@ -588,7 +687,9 @@ Object.assign(Demo,{
       {id:"exp00002",date:iso(now-86400000*10).slice(0,10),category:"Materials & products",description:"Ceramic coating stock",amount:32000,method:"Cash",recurring:"one-off",loggedBy:"owner",createdAt:iso(now-86400000*10)},
       {id:"exp00003",date:iso(now-86400000*4).slice(0,10),category:"Utilities",description:"Electricity + water",amount:8500,method:"M-Pesa",recurring:"monthly",loggedBy:"manager",createdAt:iso(now-86400000*4)},
     ];
-    return {customers:[c1,c2,c3],vehicles:[v1,v2,v3,v4],jobs,payments,photos:[],notes,promos,staff,users,expenses,mpesa:[]};
+    const members=[{id:"mem00001",customerId:c1.id,name:"Wanjiru Kamau",phone:"+254722112233",club:"Glossmith Club",source:"manual",promoCode:"",discountRate:0.05,addedBy:"owner",active:true,createdAt:iso(now-86400000*40)}];
+    const commissionPayments=[{id:"cpay0001",promoCode:"NAIROBICLUB",partner:"Nairobi Car Club",amount:2000,mpesaCode:"QGX1PAYAB",note:"June payout",paidBy:"owner",createdAt:iso(now-86400000*12)}];
+    return {customers:[c1,c2,c3],vehicles:[v1,v2,v3,v4],jobs,payments,photos:[],notes,promos,staff,users,expenses,members,commissionPayments,mpesa:[]};
   },
   /* --- compute (mirror of backend) --- */
   computeJob(job){
@@ -620,14 +721,25 @@ Object.assign(Demo,{
     const db=this.load();
     if(!db.users||!db.users.length)db.users=this.seed().users;
     if(!db.expenses)db.expenses=[];
+    if(!db.members)db.members=[];
+    if(!db.commissionPayments)db.commissionPayments=[];
     const jobs=db.jobs.map(j=>this.computeJob(j));
     return {version:EXPECTED_BACKEND,build:"demo",environment:"demo",timestamp:this.now(),
       customers:db.customers,vehicles:db.vehicles,jobs:jobs,
       promos:db.promos,staff:db.staff,expenses:db.expenses,access:ACCESS_FALLBACK,
+      members:db.members,commissionPayments:db.commissionPayments,partners:this.partners(jobs),
       users:db.users.map(u=>({id:u.id,username:u.username,role:u.role,active:u.active!==false,protected:u.protected===true||String(u.username).trim().toLowerCase()==="owner"})),
       dashboard:this.dashboard(),accounting:this.accounting(jobs)};
   },
   promoRate(p){ const r=num(p&&p.rate); return r>1?r/100:(r>0?r:0.10); },
+  memberByPhone(phone){ const np=normPhoneIntl(phone); if(!np)return null; return (this.db.members||[]).find(m=>m.active!==false&&normPhoneIntl(m.phone)===np)||null; },
+  partners(jobs){
+    const db=this.db; const byCode={};
+    (db.promos||[]).forEach(p=>{ byCode[String(p.code).toUpperCase()]={code:p.code,partner:p.owner||p.code,club:p.club||"",rate:this.promoRate(p),discountRate:num(p.discountRate),jobs:0,revenue:0,commissionAccrued:0,paid:0,owed:0}; });
+    jobs.forEach(j=>{ if(!j.promoCode)return; const e=byCode[String(j.promoCode).toUpperCase()]; if(!e)return; e.jobs++; if(j.balance<=0&&j.finalAmount>0){ e.revenue+=j.finalAmount; e.commissionAccrued+=Math.round(j.finalAmount*e.rate); } });
+    (db.commissionPayments||[]).forEach(c=>{ const e=byCode[String(c.promoCode).toUpperCase()]; if(e)e.paid+=num(c.amount); });
+    return Object.keys(byCode).map(k=>{const e=byCode[k];e.owed=Math.max(0,e.commissionAccrued-e.paid);return e;}).sort((a,b)=>b.revenue-a.revenue);
+  },
   accounting(jobs){
     const db=this.db;
     const earned=jobs.filter(j=>j.balance<=0&&j.finalAmount>0);
@@ -653,6 +765,7 @@ Object.assign(Demo,{
     // mirror the backend's capability gate (uses the logged-in demo role)
     var capOf={deleteJob:"deleteJobs",deletePhoto:"deleteJobs",deletePromo:"deleteJobs",deleteStaff:"deleteJobs",
       addPromo:"financials",addStaff:"accounting",updateStaff:"accounting",addExpense:"manageExpenses",deleteExpense:"manageExpenses",
+      deleteMember:"deleteJobs",payCommission:"viewPartners",deleteCommissionPayment:"deleteJobs",
       addUser:"manageAccounts",updateUser:"manageAccounts",deleteUser:"manageAccounts"};
     if(capOf[action] && State.role){ var A=ACCESS_FALLBACK[State.role]||ACCESS_FALLBACK.sales; if(!A[capOf[action]]) return this.fail("You don't have permission for that.","FORBIDDEN"); }
     switch(action){
@@ -681,7 +794,13 @@ Object.assign(Demo,{
       }
       case "updateUser": {
         const user=db.users.find(x=>x.id===p.id); if(!user)return this.fail("Account not found.","NOT_FOUND");
-        if(user.protected===true||String(user.username).trim().toLowerCase()==="owner")return this.fail("The primary owner account is locked and cannot be modified.","LOCKED");
+        const prot=user.protected===true||String(user.username).trim().toLowerCase()==="owner";
+        if(prot){
+          if(p.username!==undefined||p.role!==undefined||p.active!==undefined)return this.fail("The primary owner's username, role and status are locked. Only the password can be changed.","LOCKED");
+          if(p.password===undefined||String(p.password)==="")return this.fail("Enter a new password.","VALIDATION");
+          if(String(p.password).length<4)return this.fail("Password must be at least 4 characters.","VALIDATION");
+          user.password=String(p.password); this.save(); return this.ok("Owner password updated",{id:user.id,username:user.username,role:user.role,active:true,protected:true});
+        }
         const activeOwners=()=>db.users.filter(x=>x.role==="owner"&&x.active!==false).length;
         if(p.username!==undefined){ const nu=String(p.username).trim(); if(!nu)return this.fail("Username is required.","VALIDATION"); if(db.users.find(x=>x.id!==p.id&&String(x.username).toLowerCase()===nu.toLowerCase()))return this.fail("That username already exists.","DUPLICATE"); user.username=nu; }
         if(p.password!==undefined&&String(p.password)!==""){ if(String(p.password).length<4)return this.fail("Password must be at least 4 characters.","VALIDATION"); user.password=String(p.password); }
@@ -703,7 +822,11 @@ Object.assign(Demo,{
       case "uploadPhoto": { const job=db.jobs.find(j=>j.id===p.jobId); if(!job)return this.fail("Job not found","NOT_FOUND"); const phase=["before","during","after"].indexOf(p.phase)!==-1?p.phase:"before"; const row={id:this.uuid(),jobId:p.jobId,phase,url:p.dataUrl,driveId:"",createdAt:this.now()}; db.photos.push(row); this.save(); return this.ok("Photo uploaded",this.jobComputed(p.jobId),{photo:row}); }
       case "deletePhoto": { const ph=db.photos.find(x=>x.id===p.id); db.photos=db.photos.filter(x=>x.id!==p.id); this.save(); return this.ok("Removed",ph?this.jobComputed(ph.jobId):null); }
       case "deleteJob": { db.payments=db.payments.filter(x=>x.jobId!==p.id); db.photos=db.photos.filter(x=>x.jobId!==p.id); db.notes=db.notes.filter(x=>x.jobId!==p.id); db.jobs=db.jobs.filter(x=>x.id!==p.id); this.save(); return this.ok("Job deleted"); }
-      case "addPromo": { const code=String(p.code||"").trim().toUpperCase(); if(db.promos.find(x=>String(x.code).toUpperCase()===code))return this.fail("That code already exists","DUPLICATE"); const row={id:this.uuid(),code,owner:p.owner||"",category:p.category||"",rate:num(p.rate)||0.10,discountRate:p.discountRate===undefined||p.discountRate===""?0.08:num(p.discountRate),createdAt:this.now()}; db.promos.push(row); this.save(); return this.ok("Promo added",row); }
+      case "addPromo": { const code=String(p.code||"").trim().toUpperCase(); if(db.promos.find(x=>String(x.code).toUpperCase()===code))return this.fail("That code already exists","DUPLICATE"); const row={id:this.uuid(),code,owner:p.owner||"",club:p.club||"",category:p.category||"",rate:num(p.rate)||0.10,discountRate:p.discountRate===undefined||p.discountRate===""?0.08:num(p.discountRate),createdAt:this.now()}; db.promos.push(row); this.save(); return this.ok("Promo added",row); }
+      case "addMember": { const name=String(p.name||"").trim(); const ph=normPhoneIntl(p.phone); if(!name)return this.fail("Member name is required.","VALIDATION"); if(!ph)return this.fail("A phone number is required.","VALIDATION"); if(this.memberByPhone(ph))return this.fail("That phone is already a member.","DUPLICATE"); const cust=db.customers.find(c=>c.primaryPhone===ph); const row={id:this.uuid(),customerId:cust?cust.id:"",name,phone:ph,club:p.club||"Glossmith Club",source:p.source||"manual",promoCode:p.promoCode||"",discountRate:p.discountRate!==undefined&&p.discountRate!==""?num(p.discountRate):0.05,addedBy:p.addedBy||State.username||"",active:true,createdAt:this.now()}; db.members.push(row); this.save(); return this.ok("Member added",row); }
+      case "deleteMember": { db.members=(db.members||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Member removed"); }
+      case "payCommission": { const code=String(p.promoCode||"").trim().toUpperCase(); const promo=db.promos.find(x=>String(x.code).toUpperCase()===code); if(!promo)return this.fail("Choose a partner to pay.","VALIDATION"); if(num(p.amount)<=0)return this.fail("Enter an amount greater than zero.","VALIDATION"); if(!String(p.mpesaCode||"").trim())return this.fail("Enter the M-Pesa code you paid with.","VALIDATION"); const row={id:this.uuid(),promoCode:promo.code,partner:promo.owner||promo.code,amount:num(p.amount),mpesaCode:String(p.mpesaCode).toUpperCase(),note:p.note||"",paidBy:State.username||"",createdAt:this.now()}; db.commissionPayments.push(row); this.save(); return this.ok("Commission payment recorded",row); }
+      case "deleteCommissionPayment": { db.commissionPayments=(db.commissionPayments||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
       case "addExpense": { if(num(p.amount)<=0)return this.fail("Expense amount must be greater than zero.","VALIDATION"); if(!String(p.category||"").trim())return this.fail("Choose a category.","VALIDATION"); if(!db.expenses)db.expenses=[]; const row={id:this.uuid(),date:p.date||this.now().slice(0,10),category:p.category,description:p.description||"",amount:num(p.amount),method:p.method||"Cash",recurring:p.recurring||"one-off",loggedBy:p.loggedBy||"",createdAt:this.now()}; db.expenses.push(row); this.save(); return this.ok("Expense recorded",row); }
       case "deleteExpense": { db.expenses=(db.expenses||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
       case "deletePromo": { db.promos=db.promos.filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
@@ -718,8 +841,7 @@ Object.assign(Demo,{
   createJob(p){
     const db=this.db;
     for(const f of ["customerName","primaryPhone","plate","make","model"]) if(!String(p[f]||"").trim())return this.fail(f+" is required","VALIDATION");
-    const finalAmount=num(p.finalAmount)||num(p.amount);
-    if(num(p.deposit)>finalAmount)return this.fail("Deposit cannot exceed the total.","VALIDATION");
+    let finalAmount=num(p.finalAmount)||num(p.amount);
     const phone=normPhoneIntl(p.primaryPhone); const plate=normPlate(p.plate);
     let cust=db.customers.find(c=>phone&&c.primaryPhone===phone);
     if(!cust){ cust={id:this.uuid(),name:p.customerName.trim(),primaryPhone:phone,extraPhones:"[]",notes:"",createdAt:this.now(),updatedAt:this.now()}; db.customers.push(cust); }
@@ -727,9 +849,20 @@ Object.assign(Demo,{
     let veh=db.vehicles.find(v=>v.plate===plate);
     if(!veh){ veh={id:this.uuid(),customerId:cust.id,plate,make:p.make||"",model:p.model||"",year:p.year||"",colour:p.colour||"",vehicleClass:num(p.vehicleClass),createdAt:this.now(),updatedAt:this.now()}; db.vehicles.push(veh); }
     else{ veh.customerId=cust.id; veh.make=p.make||veh.make; veh.model=p.model||veh.model; veh.year=p.year||veh.year; veh.colour=p.colour||veh.colour; if(p.vehicleClass!==undefined)veh.vehicleClass=num(p.vehicleClass); }
+    // discount = max(member, club promo) — backend is source of truth
+    const amount=num(p.amount); let effRate=0, promoCode="";
+    const existingMember=this.memberByPhone(phone);
+    if(existingMember)effRate=Math.max(effRate,num(existingMember.discountRate));
+    let promo=null;
+    if(p.promoCode){ promo=db.promos.find(x=>String(x.code).toUpperCase()===String(p.promoCode).toUpperCase()); if(promo){promoCode=promo.code;effRate=Math.max(effRate,num(promo.discountRate));} }
+    finalAmount=amount>0?Math.round(amount*(1-effRate)):finalAmount;
+    const discount=Math.max(0,amount-finalAmount);
+    if(num(p.deposit)>finalAmount)return this.fail("Deposit cannot exceed the total.","VALIDATION");
     const deposit=num(p.deposit);
-    const job={id:this.uuid(),jobNo:this.nextJobNo(),customerId:cust.id,vehicleId:veh.id,services:p.services||"",channel:p.channel||"",technician:p.technician||"",amount:num(p.amount),promoCode:p.promoCode||"",discount:num(p.discount),finalAmount,cost:num(p.cost),stage:deposit>0?"Deposit Paid":"New",loggedBy:p.loggedBy||"",createdAt:this.now(),updatedAt:this.now()};
+    const job={id:this.uuid(),jobNo:this.nextJobNo(),customerId:cust.id,vehicleId:veh.id,services:p.services||"",channel:p.channel||"",technician:p.technician||"",amount,promoCode,discount,finalAmount,cost:num(p.cost),stage:deposit>0?"Deposit Paid":"New",loggedBy:p.loggedBy||"",createdAt:this.now(),updatedAt:this.now()};
     db.jobs.push(job);
+    // auto-enrol club member on club promo use
+    if(promo&&String(promo.club||"").trim()&&!existingMember){ db.members.push({id:this.uuid(),customerId:cust.id,name:cust.name,phone,club:promo.club,source:"promo",promoCode:promo.code,discountRate:num(promo.discountRate),addedBy:p.loggedBy||"auto",active:true,createdAt:this.now()}); }
     if(deposit>0){ if(p.paymentMethod==="M-Pesa"&&!String(p.mpesaCode||"").trim())return this.fail("Enter the M-Pesa code.","VALIDATION"); db.payments.push({id:this.uuid(),jobId:job.id,amount:deposit,method:p.paymentMethod||"M-Pesa",mpesaCode:(p.mpesaCode||"").toUpperCase(),kind:"Deposit",receivedBy:p.loggedBy||"",createdAt:this.now()}); }
     this.save();
     return this.ok("Job created",this.jobComputed(job.id),{jobId:job.id,jobNo:job.jobNo});

@@ -155,7 +155,7 @@
 <div id="toast"></div>
 <div id="modalRoot"></div>
 
-<script src="catalog.js?v=7.4.0"></script>
+<script src="catalog.js?v=7.5.1"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -163,13 +163,13 @@
    The BACKEND is the source of truth. This layer never computes
    balances, totals or status — it renders server-computed jobs.
    ============================================================ */
-const APP_VERSION = "7.4.0";
-const EXPECTED_BACKEND = "v7.4.0";
+const APP_VERSION = "7.5.1";
+const EXPECTED_BACKEND = "v7.5.0";
 const STAGES = ["New","Deposit Paid","In Progress","Ready for Collection","Closed"];
 const ACCESS_FALLBACK = {
-  owner:   { financials:true, accounting:true, commissions:true, deleteJobs:true, manageAccounts:true, manageExpenses:true, viewReports:true, revenue:true, viewProfit:true },
-  manager: { financials:true, accounting:true, commissions:true, deleteJobs:false, manageAccounts:false, manageExpenses:true, viewReports:true, revenue:true, viewProfit:false },
-  sales:   { financials:false, accounting:false, commissions:false, deleteJobs:false, manageAccounts:false, manageExpenses:false, viewReports:false, revenue:false, viewProfit:false },
+  owner:   { financials:true, accounting:true, commissions:true, deleteJobs:true, manageAccounts:true, manageExpenses:true, viewReports:true, revenue:true, viewProfit:true, viewPartners:true },
+  manager: { financials:true, accounting:true, commissions:true, deleteJobs:false, manageAccounts:false, manageExpenses:true, viewReports:true, revenue:true, viewProfit:false, viewPartners:true },
+  sales:   { financials:false, accounting:false, commissions:false, deleteJobs:false, manageAccounts:false, manageExpenses:false, viewReports:false, revenue:false, viewProfit:false, viewPartners:false },
 };
 const ROLES=["owner","manager","sales"];
 const ROLE_LABEL={owner:"Owner",manager:"Manager",sales:"Sales"};
@@ -201,8 +201,8 @@ const shortDate = d => d ? String(d).slice(0,10) : "—";
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 /* ===================== API + STATE ===================== */
-const DEFAULT_URL = ""; // set via Connect screen; blank ⇒ demo mode
-function getUrl(){ try{return localStorage.getItem("gm_url")||DEFAULT_URL;}catch(e){return DEFAULT_URL;} }
+const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbxwMV2BR2uic4h74of_F5gP0u4j2NgJS6sgCOFR_8lnRfx_iIyQN_Hq5YfDz_35mdd8/exec"; // live backend; blank ⇒ demo mode
+function getUrl(){ try{ const s=localStorage.getItem("gm_url"); if(s==="demo")return ""; return s||DEFAULT_URL; }catch(e){return DEFAULT_URL;} }
 function setUrl(u){ try{ u?localStorage.setItem("gm_url",u):localStorage.removeItem("gm_url"); }catch(e){} }
 
 const State = {
@@ -594,12 +594,16 @@ const NewJob = {
 /* ===================== VEHICLES / CUSTOMERS ===================== */
 const Vehicles = {
   q:"",
+  openC:{},
+  openV:{},
   view(){
     return `<div class="screen-title">Vehicles &amp; customers</div>
     <label>Search<input id="v_q" placeholder="plate, name, phone, model, make, job #" value="${esc(this.q)}"></label>
     <div id="v_results"></div>`;
   },
   after(){ $("v_q").addEventListener("input",e=>{ this.q=e.target.value; this.results(); }); this.results(); },
+  toggleC(id){ this.openC[id]=!this.openC[id]; this.results(); },
+  toggleV(id){ this.openV[id]=!this.openV[id]; this.results(); },
   results(){
     const el=$("v_results"); if(!el)return;
     const q=this.q.trim().toLowerCase(); const qP=normPlate(this.q); const qPh=this.q.replace(/\D/g,"");
@@ -618,34 +622,38 @@ const Vehicles = {
     }
     customers.sort((a,b)=>String(a.name||"zzz").localeCompare(String(b.name||"zzz")));
     if(!customers.length){ el.innerHTML=`<div class="empty">${this.q?"No match.":"No customers yet — create a job to add one."}</div>`; return; }
-    el.innerHTML=customers.map(c=>this.customerCard(c)).join("");
+    // when searching, auto-expand matches so results are visible
+    const forceOpen=!!q;
+    el.innerHTML=customers.map(c=>this.customerCard(c,forceOpen)).join("");
   },
-  customerCard(c){
+  customerCard(c,forceOpen){
     const vs=(State.snapshot.vehicles||[]).filter(v=>v.customerId===c.id);
     const jobs=State.jobs().filter(j=>j.customerId===c.id);
     const spent=jobs.filter(j=>j.balance<=0&&j.finalAmount>0).reduce((a,j)=>a+j.finalAmount,0);
     const owed=jobs.reduce((a,j)=>a+j.balance,0);
+    const member=(State.snapshot.members||[]).find(m=>m.active!==false&&waDigits(m.phone)===waDigits(c.primaryPhone));
+    const open=forceOpen||this.openC[c.id];
     return `<div class="card">
-      <div style="display:flex;justify-content:space-between;gap:8px">
-        <div><div style="font-weight:700;font-size:15px">${esc(c.name||"No name")}</div>
-        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(c.primaryPhone||"No phone")}</div></div>
-        <span class="chip">${vs.length} vehicle${vs.length===1?"":"s"}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;cursor:pointer" onclick="Vehicles.toggleC('${c.id}')">
+        <div><div style="font-weight:700;font-size:15px">${esc(c.name||"No name")} ${member?`<span class="chip lime" style="margin-left:4px">★ ${esc(member.club||"Member")}</span>`:""}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(c.primaryPhone||"No phone")} · ${vs.length} vehicle${vs.length===1?"":"s"} · ${jobs.length} job${jobs.length===1?"":"s"}</div></div>
+        <div style="text-align:right;white-space:nowrap"><div style="font-size:11px;color:var(--muted)">Owed</div><div style="font-weight:700;color:${owed>0?"var(--warn)":"var(--lime)"}">${owed>0?money(owed):"—"}</div></div></div>
       <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12.5px;color:var(--muted)">
-        <span>Spent <strong style="color:var(--lime)">${money(spent)}</strong></span>
-        <span>Owed <strong style="color:${owed>0?"var(--warn)":"#fff"}">${money(owed)}</strong></span></div>
-      ${vs.map(v=>this.vehicleBlock(v)).join("")}
+        <span>Lifetime spend <strong style="color:var(--lime)">${money(spent)}</strong></span>
+        <span style="color:var(--muted2)">${open?"▲ tap to collapse":"▼ tap for vehicles"}</span></div>
+      ${open?vs.map(v=>this.vehicleBlock(v)).join("")||`<div style="font-size:11.5px;color:var(--muted2);margin-top:10px">No vehicles on file.</div>`:""}
     </div>`;
   },
   vehicleBlock(v){
     const jobs=State.jobs().filter(j=>j.vehicleId===v.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
     const last=jobs[0]?jobs[0].createdAt:null;
+    const open=this.openV[v.id];
     return `<div style="border-top:1px solid var(--border);padding:11px 0 4px;margin-top:8px">
-      <div style="display:flex;justify-content:space-between">
-        <div><div style="font-weight:700">${esc(fmtPlate(v.plate))}</div>
+      <div style="display:flex;justify-content:space-between;cursor:pointer" onclick="event.stopPropagation();Vehicles.toggleV('${v.id}')">
+        <div><div style="font-weight:700">${esc(fmtPlate(v.plate))} <span style="font-size:10px;color:var(--muted2)">${open?"▲":"▼"}</span></div>
         <div style="font-size:11px;color:var(--muted2);margin-top:2px">${[v.make,v.model,v.year,v.colour].filter(Boolean).map(esc).join(" · ")||"—"} · ${v.vehicleClass==1?"SUV":"Saloon"}</div></div>
         <span class="chip">${jobs.length} visit${jobs.length===1?"":"s"}</span></div>
-      ${jobs.map(j=>`<div onclick="JobDetail.open('${j.id}')" style="cursor:pointer;font-size:11.5px;color:#b5b5b5;padding:7px 0;border-top:1px solid var(--border);margin-top:7px;display:flex;justify-content:space-between;gap:8px"><span>${shortDate(j.createdAt)} · ${esc(j.services||"—")}</span><span style="color:${j.balance>0?"var(--warn)":"var(--lime)"};white-space:nowrap">${j.balance>0?money(j.balance)+" owed":"paid"}</span></div>`).join("")}
-      <div style="font-size:10.5px;color:var(--muted2);margin-top:6px">Last visit ${shortDate(last)}</div>
+      ${open?(jobs.length?jobs.map(j=>`<div onclick="event.stopPropagation();JobDetail.open('${j.id}')" style="cursor:pointer;font-size:11.5px;color:#b5b5b5;padding:7px 0;border-top:1px solid var(--border);margin-top:7px;display:flex;justify-content:space-between;gap:8px"><span>${shortDate(j.createdAt)} · ${esc(j.jobNo||"")} · ${esc(j.services||"—")}</span><span style="color:${j.balance>0?"var(--warn)":"var(--lime)"};white-space:nowrap">${j.balance>0?money(j.balance)+" owed":"paid"}</span></div>`).join(""):`<div style="font-size:11px;color:var(--muted2);padding:7px 0">No visits yet.</div>`)+`<div style="font-size:10.5px;color:var(--muted2);margin-top:6px">Last visit ${shortDate(last)}</div>`:""}
     </div>`;
   }
 };
@@ -667,6 +675,6 @@ const UI={connect:()=>{}};
   if(savedRole){ State.role=savedRole; State.token=savedTok; State.username=savedUser; Auth.enter(); }
 })();
 </script>
-<script src="app.part2.js?v=7.4.0"></script>
+<script src="app.part2.js?v=7.5.1"></script>
 </body>
 </html>
