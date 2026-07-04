@@ -16,7 +16,7 @@
    This unregisters any SW and clears its caches ONCE per app version,
    then hard-reloads so the newest assets load. Guarded to never loop. */
 (function(){
-  var VER="7.7.4";
+  var VER="7.7.5";
   try{
     if("serviceWorker" in navigator){
       navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -185,7 +185,7 @@
 <div id="toast"></div>
 <div id="modalRoot"></div>
 
-<script src="catalog.js?v=7.7.4"></script>
+<script src="catalog.js?v=7.7.5"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -193,7 +193,7 @@
    The BACKEND is the source of truth. This layer never computes
    balances, totals or status — it renders server-computed jobs.
    ============================================================ */
-const APP_VERSION = "7.7.4";
+const APP_VERSION = "7.7.5";
 const EXPECTED_BACKEND = "v7.7.0";
 const STAGES = ["New","Deposit Paid","In Progress","Ready for Collection","Closed"];
 const ACCESS_FALLBACK = {
@@ -814,10 +814,10 @@ const Vehicles = {
     const last=jobs[0]?jobs[0].createdAt:null;
     const open=this.openV[v.id];
     return `<div style="border-top:1px solid var(--border);padding:11px 0 4px;margin-top:8px">
-      <div style="display:flex;justify-content:space-between;cursor:pointer" onclick="event.stopPropagation();Vehicles.toggleV('${v.id}')">
-        <div><div style="font-weight:700">${esc(fmtPlate(v.plate))} <span style="font-size:10px;color:var(--muted2)">${open?"▲":"▼"}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="cursor:pointer;flex:1" onclick="event.stopPropagation();Vehicles.toggleV('${v.id}')"><div style="font-weight:700">${esc(fmtPlate(v.plate))} <span style="font-size:10px;color:var(--muted2)">${open?"▲":"▼"}</span></div>
         <div style="font-size:11px;color:var(--muted2);margin-top:2px">${[v.make,v.model,v.year,v.colour].filter(Boolean).map(esc).join(" · ")||"—"} · ${v.vehicleClass==1?"SUV":"Saloon"}</div></div>
-        <span class="chip">${jobs.length} visit${jobs.length===1?"":"s"}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex:0 0 auto"><span class="chip">${jobs.length} visit${jobs.length===1?"":"s"}</span>${can("deleteJobs")?`<button class="btn-2" style="padding:5px 10px;font-size:11px" onclick="event.stopPropagation();Vehicles.editVehicle('${v.id}')">✎</button>`:""}</div></div>
       ${open?(jobs.length?jobs.map(j=>`<div onclick="event.stopPropagation();JobDetail.open('${j.id}')" style="cursor:pointer;font-size:11.5px;color:#b5b5b5;padding:7px 0;border-top:1px solid var(--border);margin-top:7px;display:flex;justify-content:space-between;gap:8px"><span>${shortDate(j.createdAt)} · ${esc(j.jobNo||"")} · ${esc(j.services||"—")}${(j.photos||[]).length?` <span style="color:var(--lime)">📎${(j.photos||[]).length}</span>`:""}</span><span style="color:${j.balance>0?"var(--warn)":"var(--lime)"};white-space:nowrap">${j.balance>0?money(j.balance)+" owed":"paid"}${can("viewProfit")&&num(j.cost)>0?`<br><span style="color:var(--muted2)">P ${money(j.finalAmount-num(j.cost))}</span>`:""}</span></div>`).join(""):`<div style="font-size:11px;color:var(--muted2);padding:7px 0">No visits yet.</div>`)+`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="font-size:10.5px;color:var(--muted2)">Last visit ${shortDate(last)}</span>${can("deleteJobs")?`<button class="btn-2" style="padding:5px 12px;font-size:11px" onclick="event.stopPropagation();Vehicles.editVehicle('${v.id}')">✎ Edit vehicle</button>`:""}</div>`:""}
     </div>`;
   }
@@ -840,6 +840,6 @@ const UI={connect:()=>{}};
   if(savedRole){ State.role=savedRole; State.token=savedTok; State.username=savedUser; Auth.enter(); }
 })();
 </script>
-<script src="app.part2.js?v=7.7.4"></script>
+<script src="app.part2.js?v=7.7.5"></script>
 </body>
 </html>
