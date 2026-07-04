@@ -16,7 +16,7 @@
    This unregisters any SW and clears its caches ONCE per app version,
    then hard-reloads so the newest assets load. Guarded to never loop. */
 (function(){
-  var VER="7.7.2";
+  var VER="7.7.4";
   try{
     if("serviceWorker" in navigator){
       navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -185,7 +185,7 @@
 <div id="toast"></div>
 <div id="modalRoot"></div>
 
-<script src="catalog.js?v=7.7.2"></script>
+<script src="catalog.js?v=7.7.4"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -193,7 +193,7 @@
    The BACKEND is the source of truth. This layer never computes
    balances, totals or status — it renders server-computed jobs.
    ============================================================ */
-const APP_VERSION = "7.7.2";
+const APP_VERSION = "7.7.4";
 const EXPECTED_BACKEND = "v7.7.0";
 const STAGES = ["New","Deposit Paid","In Progress","Ready for Collection","Closed"];
 const ACCESS_FALLBACK = {
@@ -253,9 +253,10 @@ function deviceLabel(){
      auto-healed to DEFAULT_URL, so a browser stuck on a revoked URL fixes itself
      WITHOUT the user clearing data. This is what makes normal + incognito behave
      identically and lets a PWA survive iOS purging localStorage. */
-const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbx53M1KPepZCbM23WEBm6pOh5lxnVy4Zt_Huhe1VxIhlD_OAlQZ3kwScER92eCHu3M8/exec";
+const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbyOUsTLSGOtv7hf70P5EbABS85axk9j9Xotm0-xm4jruHOgeGsxO59VZaMNCj3myVFm/exec";
 const OLD_URLS = [
-  "AKfycbxwMV2BR2uic4h74of_F5gP0u4j2NgJS6sgCOFR_8lnRfx_iIyQN_Hq5YfDz_35mdd8"
+  "AKfycbxwMV2BR2uic4h74of_F5gP0u4j2NgJS6sgCOFR_8lnRfx_iIyQN_Hq5YfDz_35mdd8",
+  "AKfycbx53M1KPepZCbM23WEBm6pOh5lxnVy4Zt_Huhe1VxIhlD_OAlQZ3kwScER92eCHu3M8"
 ]; // deployment IDs that must never be used again
 function isDeadUrl(u){ return !!u && OLD_URLS.some(id=>u.indexOf(id)!==-1); }
 function getUrl(){
@@ -839,6 +840,6 @@ const UI={connect:()=>{}};
   if(savedRole){ State.role=savedRole; State.token=savedTok; State.username=savedUser; Auth.enter(); }
 })();
 </script>
-<script src="app.part2.js?v=7.7.2"></script>
+<script src="app.part2.js?v=7.7.4"></script>
 </body>
 </html>
