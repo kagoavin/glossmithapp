@@ -155,7 +155,7 @@
 <div id="toast"></div>
 <div id="modalRoot"></div>
 
-<script src="catalog.js?v=7.6.1"></script>
+<script src="catalog.js?v=7.7.1"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -163,8 +163,8 @@
    The BACKEND is the source of truth. This layer never computes
    balances, totals or status — it renders server-computed jobs.
    ============================================================ */
-const APP_VERSION = "7.6.1";
-const EXPECTED_BACKEND = "v7.6.0";
+const APP_VERSION = "7.7.1";
+const EXPECTED_BACKEND = "v7.7.0";
 const STAGES = ["New","Deposit Paid","In Progress","Ready for Collection","Closed"];
 const ACCESS_FALLBACK = {
   owner:   { financials:true, accounting:true, commissions:true, deleteJobs:true, manageAccounts:true, manageExpenses:true, viewReports:true, revenue:true, viewProfit:true, viewPartners:true },
@@ -445,7 +445,7 @@ const Pipeline = {
     return `<div class="card" style="border-color:rgba(184,255,0,0.3)">
       <div style="display:flex;justify-content:space-between;gap:8px">
         <div><div style="font-weight:700;font-size:15px">${esc(r.name)} ${promo}</div>
-        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(r.phone)} · ${esc(r.vehicle||[r.make,r.model].filter(Boolean).join(" "))}</div></div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(r.phone)} · ${esc(r.vehicle||[r.make,r.model].filter(Boolean).join(" "))}${r.plate?` · <strong style="color:var(--lime)">${esc(fmtPlate(r.plate))}</strong>`:""}</div></div>
         <span class="chip warn">New request</span></div>
       <div style="font-size:12.5px;color:#cfcfcf;margin-top:10px">${esc(r.services||"—")}</div>
       <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted);flex-wrap:wrap;gap:6px">
@@ -532,13 +532,14 @@ const NewJob = {
     const f=this.fresh();
     f.customerName=r.name||""; f.primaryPhone=r.phone||"";
     f.make=r.make||""; f.model=r.model||""; f.year=r.year||""; f.vehicleClass=num(r.vehicleClass);
+    f.plate=r.plate||"";
     f.promoCode=r.promoCode||""; f.channel="Website";
     f.noteEdited=true; f.requestId=r.id;
     const when=[r.preferredDate?shortDate(r.preferredDate):"",r.preferredTime||""].filter(Boolean).join(" ");
     f.descPrefill=[r.services||"", when?("Requested: "+when):"", r.notes||""].filter(Boolean).join(" · ");
     this.f=f;
     Screens.go("new");
-    toast("Add the plate & pick services to confirm this booking");
+    toast(r.plate?"Plate filled in — pick services to confirm this booking":"Add the plate & pick services to confirm this booking");
   },
   view(){
     if(!this.f) this.f=this.fresh();
@@ -737,6 +738,7 @@ const Vehicles = {
       <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12.5px;color:var(--muted)">
         <span>Lifetime spend <strong style="color:var(--lime)">${money(spent)}</strong></span>
         <span style="color:var(--muted2)">${open?"▲ tap to collapse":"▼ tap for vehicles"}</span></div>
+      ${open&&can("deleteJobs")?`<button class="btn-2" style="width:100%;margin-top:10px;font-size:12px" onclick="Vehicles.editCustomer('${c.id}')">✎ Edit customer</button>`:""}
       ${open?vs.map(v=>this.vehicleBlock(v)).join("")||`<div style="font-size:11.5px;color:var(--muted2);margin-top:10px">No vehicles on file.</div>`:""}
     </div>`;
   },
@@ -749,7 +751,7 @@ const Vehicles = {
         <div><div style="font-weight:700">${esc(fmtPlate(v.plate))} <span style="font-size:10px;color:var(--muted2)">${open?"▲":"▼"}</span></div>
         <div style="font-size:11px;color:var(--muted2);margin-top:2px">${[v.make,v.model,v.year,v.colour].filter(Boolean).map(esc).join(" · ")||"—"} · ${v.vehicleClass==1?"SUV":"Saloon"}</div></div>
         <span class="chip">${jobs.length} visit${jobs.length===1?"":"s"}</span></div>
-      ${open?(jobs.length?jobs.map(j=>`<div onclick="event.stopPropagation();JobDetail.open('${j.id}')" style="cursor:pointer;font-size:11.5px;color:#b5b5b5;padding:7px 0;border-top:1px solid var(--border);margin-top:7px;display:flex;justify-content:space-between;gap:8px"><span>${shortDate(j.createdAt)} · ${esc(j.jobNo||"")} · ${esc(j.services||"—")}${(j.photos||[]).length?` <span style="color:var(--lime)">📎${(j.photos||[]).length}</span>`:""}</span><span style="color:${j.balance>0?"var(--warn)":"var(--lime)"};white-space:nowrap">${j.balance>0?money(j.balance)+" owed":"paid"}${can("viewProfit")&&num(j.cost)>0?`<br><span style="color:var(--muted2)">P ${money(j.finalAmount-num(j.cost))}</span>`:""}</span></div>`).join(""):`<div style="font-size:11px;color:var(--muted2);padding:7px 0">No visits yet.</div>`)+`<div style="font-size:10.5px;color:var(--muted2);margin-top:6px">Last visit ${shortDate(last)}</div>`:""}
+      ${open?(jobs.length?jobs.map(j=>`<div onclick="event.stopPropagation();JobDetail.open('${j.id}')" style="cursor:pointer;font-size:11.5px;color:#b5b5b5;padding:7px 0;border-top:1px solid var(--border);margin-top:7px;display:flex;justify-content:space-between;gap:8px"><span>${shortDate(j.createdAt)} · ${esc(j.jobNo||"")} · ${esc(j.services||"—")}${(j.photos||[]).length?` <span style="color:var(--lime)">📎${(j.photos||[]).length}</span>`:""}</span><span style="color:${j.balance>0?"var(--warn)":"var(--lime)"};white-space:nowrap">${j.balance>0?money(j.balance)+" owed":"paid"}${can("viewProfit")&&num(j.cost)>0?`<br><span style="color:var(--muted2)">P ${money(j.finalAmount-num(j.cost))}</span>`:""}</span></div>`).join(""):`<div style="font-size:11px;color:var(--muted2);padding:7px 0">No visits yet.</div>`)+`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="font-size:10.5px;color:var(--muted2)">Last visit ${shortDate(last)}</span>${can("deleteJobs")?`<button class="btn-2" style="padding:5px 12px;font-size:11px" onclick="event.stopPropagation();Vehicles.editVehicle('${v.id}')">✎ Edit vehicle</button>`:""}</div>`:""}
     </div>`;
   }
 };
@@ -771,6 +773,6 @@ const UI={connect:()=>{}};
   if(savedRole){ State.role=savedRole; State.token=savedTok; State.username=savedUser; Auth.enter(); }
 })();
 </script>
-<script src="app.part2.js?v=7.6.1"></script>
+<script src="app.part2.js?v=7.7.1"></script>
 </body>
 </html>

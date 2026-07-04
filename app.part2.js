@@ -14,6 +14,36 @@ function openModal(html){
 }
 function closeModal(){ $("modalRoot").innerHTML=""; }
 
+/* ===================== EDIT CUSTOMER / VEHICLE (owner) ===================== */
+Vehicles.editCustomer=function(id){
+  const c=State.customer(id); if(!c)return;
+  openModal(`<h3>Edit customer</h3>
+    <label>Name<input id="ec_name" value="${esc(c.name||"")}"></label>
+    <label>Primary phone<input id="ec_phone" inputmode="tel" value="${esc(c.primaryPhone||"")}"></label>
+    <div id="ec_note" style="font-size:12px;color:var(--muted);margin:2px 0 12px"></div>
+    <div class="btn-row"><button class="btn-2" onclick="closeModal()">Cancel</button><button class="btn" style="flex:2" id="ec_save" onclick="Vehicles.saveCustomer('${id}')">Save</button></div>`);
+};
+Vehicles.saveCustomer=async function(id){
+  const name=$("ec_name").value.trim(), primaryPhone=$("ec_phone").value.trim(), note=$("ec_note");
+  if(!name||!primaryPhone){ note.textContent="Name and phone are required."; note.style.color="var(--danger)"; return; }
+  await act(async()=>{ $("ec_save").disabled=true; const res=await Api.call("updateCustomer",{id,name,primaryPhone}); if(!handle(res)){note.textContent=res&&res.message;note.style.color="var(--danger)";const b=$("ec_save");if(b)b.disabled=false;return;} await Api.load(); closeModal(); toast("Customer updated"); Screens.render(); });
+};
+Vehicles.editVehicle=function(id){
+  const v=State.vehicle(id); if(!v)return;
+  openModal(`<h3>Edit vehicle</h3>
+    <label>Number plate<input id="ev_plate" value="${esc(fmtPlate(v.plate))}" style="text-transform:uppercase"></label>
+    <div style="display:flex;gap:10px"><label style="flex:1">Make<input id="ev_make" value="${esc(v.make||"")}"></label><label style="flex:1">Model<input id="ev_model" value="${esc(v.model||"")}"></label></div>
+    <div style="display:flex;gap:10px"><label style="flex:1">Year<input id="ev_year" value="${esc(v.year||"")}"></label><label style="flex:1">Colour<input id="ev_colour" value="${esc(v.colour||"")}"></label></div>
+    <label>Class<select id="ev_class"><option value="0" ${num(v.vehicleClass)===0?"selected":""}>Saloon</option><option value="1" ${num(v.vehicleClass)===1?"selected":""}>SUV / 4×4</option></select></label>
+    <div id="ev_note" style="font-size:12px;color:var(--muted);margin:2px 0 12px"></div>
+    <div class="btn-row"><button class="btn-2" onclick="closeModal()">Cancel</button><button class="btn" style="flex:2" id="ev_save" onclick="Vehicles.saveVehicle('${id}')">Save</button></div>`);
+};
+Vehicles.saveVehicle=async function(id){
+  const plate=$("ev_plate").value.trim(), make=$("ev_make").value.trim(), model=$("ev_model").value.trim(), year=$("ev_year").value.trim(), colour=$("ev_colour").value.trim(), vehicleClass=num($("ev_class").value), note=$("ev_note");
+  if(!plate){ note.textContent="Plate is required."; note.style.color="var(--danger)"; return; }
+  await act(async()=>{ $("ev_save").disabled=true; const res=await Api.call("updateVehicle",{id,plate,make,model,year,colour,vehicleClass}); if(!handle(res)){note.textContent=res&&res.message;note.style.color="var(--danger)";const b=$("ev_save");if(b)b.disabled=false;return;} await Api.load(); closeModal(); toast("Vehicle updated"); Screens.render(); });
+};
+
 /* ===================== CLEAR BALANCE / ADD PAYMENT ===================== */
 Object.assign(ClearBalance,{
   state:null,
@@ -853,6 +883,7 @@ Object.assign(Demo,{
     const db=this.load(); p=p||{};
     // mirror the backend's capability gate (uses the logged-in demo role)
     var capOf={deleteJob:"deleteJobs",deletePhoto:"deleteJobs",deletePromo:"deleteJobs",deleteStaff:"deleteJobs",
+      updateVehicle:"deleteJobs",updateCustomer:"deleteJobs",
       addPromo:"financials",addStaff:"accounting",updateStaff:"accounting",addExpense:"manageExpenses",deleteExpense:"manageExpenses",
       deleteMember:"deleteJobs",payCommission:"viewPartners",deleteCommissionPayment:"deleteJobs",
       clearDevice:"manageAccounts",blockDevice:"manageAccounts",
@@ -929,12 +960,14 @@ Object.assign(Demo,{
       case "uploadPhoto": { const job=db.jobs.find(j=>j.id===p.jobId); if(!job)return this.fail("Job not found","NOT_FOUND"); const phase=["before","during","after"].indexOf(p.phase)!==-1?p.phase:"before"; const row={id:this.uuid(),jobId:p.jobId,phase,url:p.dataUrl,driveId:"",createdAt:this.now()}; db.photos.push(row); this.save(); return this.ok("Photo uploaded",this.jobComputed(p.jobId),{photo:row}); }
       case "deletePhoto": { const ph=db.photos.find(x=>x.id===p.id); db.photos=db.photos.filter(x=>x.id!==p.id); this.save(); return this.ok("Removed",ph?this.jobComputed(ph.jobId):null); }
       case "deleteJob": { db.payments=db.payments.filter(x=>x.jobId!==p.id); db.photos=db.photos.filter(x=>x.jobId!==p.id); db.notes=db.notes.filter(x=>x.jobId!==p.id); db.jobs=db.jobs.filter(x=>x.id!==p.id); this.save(); return this.ok("Job deleted"); }
+      case "updateCustomer": { const c=db.customers.find(x=>x.id===p.id); if(!c)return this.fail("Customer not found.","NOT_FOUND"); if(p.name!==undefined)c.name=String(p.name).trim(); if(p.primaryPhone!==undefined)c.primaryPhone=normPhoneIntl(p.primaryPhone); c.updatedAt=this.now(); this.save(); return this.ok("Customer updated",c); }
+      case "updateVehicle": { const v=db.vehicles.find(x=>x.id===p.id); if(!v)return this.fail("Vehicle not found.","NOT_FOUND"); if(p.plate!==undefined){ const np=normPlate(p.plate); if(db.vehicles.find(x=>x.id!==p.id&&normPlate(x.plate)===np))return this.fail("Another vehicle already uses plate "+np+".","DUPLICATE"); v.plate=np; } ["make","model","year","colour"].forEach(k=>{ if(p[k]!==undefined)v[k]=p[k]; }); if(p.vehicleClass!==undefined)v.vehicleClass=num(p.vehicleClass); v.updatedAt=this.now(); this.save(); return this.ok("Vehicle updated",v); }
       case "addPromo": { const code=String(p.code||"").trim().toUpperCase(); if(db.promos.find(x=>String(x.code).toUpperCase()===code))return this.fail("That code already exists","DUPLICATE"); const row={id:this.uuid(),code,owner:p.owner||"",club:p.club||"",category:p.category||"",rate:num(p.rate)||0.10,discountRate:p.discountRate===undefined||p.discountRate===""?0.08:num(p.discountRate),createdAt:this.now()}; db.promos.push(row); this.save(); return this.ok("Promo added",row); }
       case "addMember": { const name=String(p.name||"").trim(); const ph=normPhoneIntl(p.phone); if(!name)return this.fail("Member name is required.","VALIDATION"); if(!ph)return this.fail("A phone number is required.","VALIDATION"); if(this.memberByPhone(ph))return this.fail("That phone is already a member.","DUPLICATE"); const cust=db.customers.find(c=>c.primaryPhone===ph); const row={id:this.uuid(),customerId:cust?cust.id:"",name,phone:ph,club:p.club||"Glossmith Club",source:p.source||"manual",promoCode:p.promoCode||"",discountRate:p.discountRate!==undefined&&p.discountRate!==""?num(p.discountRate):0.05,addedBy:p.addedBy||State.username||"",active:true,createdAt:this.now()}; db.members.push(row); this.save(); return this.ok("Member added",row); }
       case "deleteMember": { db.members=(db.members||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Member removed"); }
       case "payCommission": { const code=String(p.promoCode||"").trim().toUpperCase(); const promo=db.promos.find(x=>String(x.code).toUpperCase()===code); if(!promo)return this.fail("Choose a partner to pay.","VALIDATION"); if(num(p.amount)<=0)return this.fail("Enter an amount greater than zero.","VALIDATION"); if(!String(p.mpesaCode||"").trim())return this.fail("Enter the M-Pesa code you paid with.","VALIDATION"); const row={id:this.uuid(),promoCode:promo.code,partner:promo.owner||promo.code,amount:num(p.amount),mpesaCode:String(p.mpesaCode).toUpperCase(),note:p.note||"",paidBy:State.username||"",createdAt:this.now()}; db.commissionPayments.push(row); this.save(); return this.ok("Commission payment recorded",row); }
       case "deleteCommissionPayment": { db.commissionPayments=(db.commissionPayments||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Deleted"); }
-      case "webBooking": { if(!String(p.name||"").trim()||!String(p.phone||"").trim())return this.fail("Name and phone are required.","VALIDATION"); if(!db.requests)db.requests=[]; const row={id:this.uuid(),name:String(p.name).trim(),phone:normPhoneIntl(p.phone),vehicle:p.vehicle||"",make:p.make||"",model:p.model||"",year:p.year||"",vehicleClass:num(p.vehicleClass),services:p.services||"",amount:num(p.amount),preferredDate:p.preferredDate||"",preferredTime:p.preferredTime||"",notes:p.notes||"",promoCode:p.promoCode||"",status:"pending",source:p.source||"website",createdAt:this.now()}; db.requests.push(row); this.save(); return this.ok("Booking received",row,{requestId:row.id}); }
+      case "webBooking": { if(!String(p.name||"").trim()||!String(p.phone||"").trim())return this.fail("Name and phone are required.","VALIDATION"); if(!db.requests)db.requests=[]; const row={id:this.uuid(),name:String(p.name).trim(),phone:normPhoneIntl(p.phone),vehicle:p.vehicle||"",make:p.make||"",model:p.model||"",year:p.year||"",vehicleClass:num(p.vehicleClass),plate:normPlate(p.plate),services:p.services||"",amount:num(p.amount),preferredDate:p.preferredDate||"",preferredTime:p.preferredTime||"",notes:p.notes||"",promoCode:p.promoCode||"",status:"pending",source:p.source||"website",createdAt:this.now()}; db.requests.push(row); this.save(); return this.ok("Booking received",row,{requestId:row.id}); }
       case "deleteRequest": { db.requests=(db.requests||[]).filter(x=>x.id!==p.id); this.save(); return this.ok("Request removed"); }
       case "approveRequest": { const r=(db.requests||[]).find(x=>x.id===p.id); if(r)r.status="approved"; this.save(); return this.ok("Request approved"); }
       case "addExpense": { if(num(p.amount)<=0)return this.fail("Expense amount must be greater than zero.","VALIDATION"); if(!String(p.category||"").trim())return this.fail("Choose a category.","VALIDATION"); if(!db.expenses)db.expenses=[]; const row={id:this.uuid(),date:p.date||this.now().slice(0,10),category:p.category,description:p.description||"",amount:num(p.amount),method:p.method||"Cash",recurring:p.recurring||"one-off",loggedBy:p.loggedBy||"",createdAt:this.now()}; db.expenses.push(row); this.save(); return this.ok("Expense recorded",row); }
