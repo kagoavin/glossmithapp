@@ -736,6 +736,7 @@ Object.assign(UI,{
   async saveUrl(){
     const url=$("cn_url").value.trim(); const note=$("cn_note");
     if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)){ note.textContent="That doesn't look like an Apps Script /exec URL."; note.style.color="var(--danger)"; return; }
+    if(typeof isDeadUrl==="function" && isDeadUrl(url)){ note.textContent="That is an old, retired deployment. Use the current /exec URL."; note.style.color="var(--danger)"; return; }
     note.textContent="Testing…"; note.style.color="var(--muted)";
     try{
       const r=await fetch(url+"?health=1"); const d=await r.json();

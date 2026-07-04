@@ -4,7 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0d0d0d">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Glossmith CRM</title>
+<script>
+/* ── STALE-CACHE KILLER ─────────────────────────────────────────────
+   The #1 reason "normal browser" fails while Incognito works: a stale
+   Service Worker (from an earlier deploy) keeps serving OLD JS that points
+   at a dead backend URL. Incognito has no SW, so it always runs fresh.
+   This unregisters any SW and clears its caches ONCE per app version,
+   then hard-reloads so the newest assets load. Guarded to never loop. */
+(function(){
+  var VER="7.7.2";
+  try{
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        var had=regs.length>0;
+        regs.forEach(function(r){ r.unregister(); });
+        if(window.caches && caches.keys){ caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); }); }
+        var done=null; try{ done=localStorage.getItem("gm_cachever"); }catch(e){}
+        if(had && done!==VER){
+          try{ localStorage.setItem("gm_cachever",VER); }catch(e){}
+          location.reload();
+        } else {
+          try{ localStorage.setItem("gm_cachever",VER); }catch(e){}
+        }
+      }).catch(function(){});
+    }
+  }catch(e){}
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -155,7 +185,7 @@
 <div id="toast"></div>
 <div id="modalRoot"></div>
 
-<script src="catalog.js?v=7.7.1"></script>
+<script src="catalog.js?v=7.7.2"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -163,7 +193,7 @@
    The BACKEND is the source of truth. This layer never computes
    balances, totals or status — it renders server-computed jobs.
    ============================================================ */
-const APP_VERSION = "7.7.1";
+const APP_VERSION = "7.7.2";
 const EXPECTED_BACKEND = "v7.7.0";
 const STAGES = ["New","Deposit Paid","In Progress","Ready for Collection","Closed"];
 const ACCESS_FALLBACK = {
@@ -215,9 +245,28 @@ function deviceLabel(){
 }
 
 /* ===================== API + STATE ===================== */
-const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbxwMV2BR2uic4h74of_F5gP0u4j2NgJS6sgCOFR_8lnRfx_iIyQN_Hq5YfDz_35mdd8/exec"; // live backend; blank ⇒ demo mode
-function getUrl(){ try{ const s=localStorage.getItem("gm_url"); if(s==="demo")return ""; return s||DEFAULT_URL; }catch(e){return DEFAULT_URL;} }
-function setUrl(u){ try{ u?localStorage.setItem("gm_url",u):localStorage.removeItem("gm_url"); }catch(e){} }
+/* SINGLE SOURCE OF TRUTH for the backend URL.
+   - DEFAULT_URL is the current production deployment (baked in).
+   - The user may override it via Connect; the override lives in localStorage 'gm_url'.
+   - 'gm_url' === 'demo'  → demo mode.
+   - If a stored override matches a KNOWN-OLD/dead deployment, it is ignored and
+     auto-healed to DEFAULT_URL, so a browser stuck on a revoked URL fixes itself
+     WITHOUT the user clearing data. This is what makes normal + incognito behave
+     identically and lets a PWA survive iOS purging localStorage. */
+const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbx53M1KPepZCbM23WEBm6pOh5lxnVy4Zt_Huhe1VxIhlD_OAlQZ3kwScER92eCHu3M8/exec";
+const OLD_URLS = [
+  "AKfycbxwMV2BR2uic4h74of_F5gP0u4j2NgJS6sgCOFR_8lnRfx_iIyQN_Hq5YfDz_35mdd8"
+]; // deployment IDs that must never be used again
+function isDeadUrl(u){ return !!u && OLD_URLS.some(id=>u.indexOf(id)!==-1); }
+function getUrl(){
+  try{
+    const s=localStorage.getItem("gm_url");
+    if(s==="demo")return "";
+    if(s && isDeadUrl(s)){ localStorage.removeItem("gm_url"); return DEFAULT_URL; } // self-heal
+    return s || DEFAULT_URL;
+  }catch(e){ return DEFAULT_URL; }
+}
+function setUrl(u){ try{ (u && !isDeadUrl(u)) ? localStorage.setItem("gm_url",u) : localStorage.removeItem("gm_url"); }catch(e){} }
 
 const State = {
   snapshot:{customers:[],vehicles:[],jobs:[],promos:[],staff:[],users:[],dashboard:{},version:null,build:null},
@@ -237,9 +286,18 @@ const Api = {
     let lastErr;
     for(let attempt=0;attempt<2;attempt++){
       try{
-        const r = await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body});
-        return await r.json();
-      }catch(e){ lastErr=e; await new Promise(r=>setTimeout(r,400)); }
+        const ctl=("AbortController" in window)?new AbortController():null;
+        const timer=ctl?setTimeout(()=>ctl.abort(),15000):null; // 15s timeout, not an infinite hang
+        const r = await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body,signal:ctl?ctl.signal:undefined});
+        if(timer)clearTimeout(timer);
+        if(!r.ok){ lastErr=new Error("HTTP "+r.status+" from backend"); lastErr.kind="http"; }
+        else {
+          const text=await r.text();
+          try{ return JSON.parse(text); }
+          catch(pe){ lastErr=new Error("Backend returned a non-JSON response (likely a stale or wrong deployment URL)."); lastErr.kind="parse"; }
+        }
+      }catch(e){ lastErr=e; lastErr.kind=lastErr.kind||(e.name==="AbortError"?"timeout":"network"); }
+      if(attempt===0) await new Promise(r=>setTimeout(r,500));
     }
     throw lastErr;
   },
@@ -292,7 +350,15 @@ const Auth = {
           try{ sessionStorage.setItem("gm_role",res.role); sessionStorage.setItem("gm_token",res.token||""); sessionStorage.setItem("gm_user",State.username); }catch(e){}
           this.enter();
         } else { $("gateErr").textContent=(res&&res.message)||"Wrong username or password"; btn.disabled=false; btn.textContent="Sign in"; }
-      }catch(e){ $("gateErr").textContent="Connection error — check backend"; btn.disabled=false; btn.textContent="Sign in"; }
+      }catch(e){
+        const k=e&&e.kind;
+        const msg = k==="timeout" ? "Backend timed out — check your connection and try again."
+                  : k==="parse"   ? "Reached the server, but it isn't the CRM backend. Tap “Fix connection” and re-save the /exec URL."
+                  : k==="http"    ? "Backend error ("+(e.message||"")+"). It may be redeploying — try again shortly."
+                  : "Can't reach the backend. Check your internet, then tap “Fix connection”.";
+        $("gateErr").innerHTML=esc(msg)+" <button class='btn-2' style='margin-top:8px;width:100%' onclick=\"UI.connect()\">Fix connection</button>";
+        btn.disabled=false; btn.textContent="Sign in";
+      }
     };
     form.addEventListener("submit",submit);
     btn.addEventListener("click",submit);
@@ -773,6 +839,6 @@ const UI={connect:()=>{}};
   if(savedRole){ State.role=savedRole; State.token=savedTok; State.username=savedUser; Auth.enter(); }
 })();
 </script>
-<script src="app.part2.js?v=7.7.1"></script>
+<script src="app.part2.js?v=7.7.2"></script>
 </body>
 </html>
